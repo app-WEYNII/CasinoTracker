@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Casino Tracker">
+<meta name="theme-color" content="#06090f">
+<meta name="description" content="Tracker de sessions casino : slots, blackjack, bonus hunt, statistiques de bankroll">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<title>Casino Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.7/dexie.min.js"></script>
+<style>
+:root{--bg-deep:#06090f;--bg-base:#0a0f1a;--bg-card:#111827;--bg-card-hover:#1a2332;--bg-input:#0d1320;--border:#1e293b;--border-focus:#10b981;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--text-muted:#475569;--accent:#10b981;--accent-dim:rgba(16,185,129,.15);--accent-glow:rgba(16,185,129,.3);--red:#ef4444;--red-dim:rgba(239,68,68,.15);--orange:#f59e0b;--orange-dim:rgba(245,158,11,.15);--blue:#3b82f6;--blue-dim:rgba(59,130,246,.15);--font-body:'SF Pro Text',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-mono:'SF Mono','Fira Code','Consolas',monospace;--space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--space-2xl:48px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-full:9999px;--shadow-card:0 1px 3px rgba(0,0,0,.4),0 0 0 1px var(--border);--header-h:56px;--nav-h:68px;--safe-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{height:100%}
+body{height:100%;font-family:var(--font-body);font-size:15px;line-height:1.5;color:var(--text-primary);background:var(--bg-base);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;user-select:none}
+.app-header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;height:var(--header-h);padding:0 var(--space-md);background:var(--bg-deep);border-bottom:1px solid var(--border)}
+.app-title{font-size:18px;font-weight:700;letter-spacing:-.3px}.app-title .accent{color:var(--accent)}
+.bankroll-badge{display:inline-flex;align-items:center;padding:4px 12px;background:var(--accent-dim);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-full);font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent)}.bankroll-badge.negative{background:var(--red-dim);border-color:rgba(239,68,68,.25);color:var(--red)}
+.app-main{height:calc(100dvh - var(--header-h) - var(--nav-h) - var(--safe-bottom));overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.view{display:none;min-height:100%;padding:var(--space-lg) var(--space-md) var(--space-xl);animation:vIn .25s ease-out}.view.active{display:block}@keyframes vIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.view-inner{max-width:600px;margin:0 auto}.view-title{font-size:22px;font-weight:700;margin-bottom:var(--space-lg)}
+.view-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;color:var(--text-muted)}.placeholder-icon{font-size:64px;margin-bottom:var(--space-md)}.view-placeholder h2{font-size:20px;color:var(--text-secondary);margin-bottom:var(--space-sm)}.view-placeholder p{font-size:14px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;height:calc(var(--nav-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:var(--bg-deep);border-top:1px solid var(--border)}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--text-muted);cursor:pointer;transition:color .2s;position:relative}.nav-tab.active{color:var(--accent)}.nav-tab.active::before{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--accent);border-radius:0 0 2px 2px}.nav-icon{font-size:22px;line-height:1}.nav-label{font-size:11px;font-weight:600;letter-spacing:.3px}
+.settings-card{background:var(--bg-card);border-radius:var(--radius-md);padding:var(--space-lg);margin-bottom:var(--space-md);box-shadow:var(--shadow-card)}.settings-card--muted{background:transparent;box-shadow:none;border:1px dashed var(--border);text-align:center}.card-title{font-size:15px;font-weight:700;margin-bottom:var(--space-md)}
+.form-group{margin-bottom:var(--space-md)}.form-group:last-child{margin-bottom:0}.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:var(--space-xs)}
+.input{width:100%;padding:10px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-body);font-size:15px;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}.input:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-dim)}.input::placeholder{color:var(--text-muted)}
+select.input{cursor:pointer;padding-right:36px}
+textarea.input{resize:vertical;min-height:60px;font-family:var(--font-body)}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-sm);width:100%;padding:12px var(--space-md);border:none;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:active{background:#0ea572;transform:scale(.98)}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}.btn-outline:active{background:var(--bg-card-hover)}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-warn{background:var(--orange-dim);color:var(--orange);border:1px solid rgba(245,158,11,.2)}
+.btn-sm{padding:6px 12px;font-size:12px;width:auto}
+.btn-group-vertical{display:flex;flex-direction:column;gap:var(--space-sm)}.separator{height:1px;background:var(--border);margin:var(--space-md) 0}.app-info{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:var(--space-sm) 0;margin-bottom:var(--space-md)}.toggle-row label{font-size:14px;font-weight:600;color:var(--text-secondary)}
+.toggle-switch{position:relative;width:48px;height:28px;flex-shrink:0}.toggle-switch input{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;margin:0}.toggle-slider{position:absolute;inset:0;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-full);transition:all .2s;pointer-events:none}.toggle-slider::before{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--text-muted);border-radius:50%;transition:all .2s}.toggle-switch input:checked+.toggle-slider{background:var(--accent-dim);border-color:var(--accent)}.toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--accent)}
+.modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);align-items:flex-end;justify-content:center}.modal-overlay.open{display:flex;animation:oIn .2s ease-out}@keyframes oIn{from{opacity:0}to{opacity:1}}
+.modal{width:100%;max-width:500px;max-height:85vh;background:var(--bg-card);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;display:flex;flex-direction:column;animation:mUp .3s cubic-bezier(.16,1,.3,1)}@keyframes mUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border)}.modal-title{font-size:17px;font-weight:700}
+.modal-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:var(--bg-input);color:var(--text-secondary);border-radius:var(--radius-full);font-size:16px;cursor:pointer}
+.modal-body{flex:1;overflow-y:auto;padding:var(--space-lg);-webkit-overflow-scrolling:touch}
+.modal-footer{padding:var(--space-md) var(--space-lg);padding-bottom:calc(var(--space-md) + var(--safe-bottom));border-top:1px solid var(--border);display:flex;gap:var(--space-sm)}.modal-footer:empty{display:none}
+.toast-container{position:fixed;top:calc(var(--header-h) + var(--space-md));left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:var(--space-sm);pointer-events:none;width:calc(100% - var(--space-xl));max-width:400px}
+.toast{padding:12px var(--space-md);border-radius:var(--radius-sm);font-size:14px;font-weight:500;text-align:center;pointer-events:auto;animation:tIn .3s ease-out,tOut .3s ease-in forwards;animation-delay:0s,var(--toast-dur,2.5s)}.toast--success{background:var(--accent);color:#fff}.toast--error{background:var(--red);color:#fff}.toast--warning{background:var(--orange);color:#000}
+@keyframes tIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}@keyframes tOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm);margin-bottom:var(--space-md)}.stat-box{background:var(--bg-input);border-radius:var(--radius-sm);padding:var(--space-md);text-align:center}
+.stat-value{font-family:var(--font-mono);font-size:20px;font-weight:700;line-height:1.2}.stat-value.positive{color:var(--accent)}.stat-value.negative{color:var(--red)}.stat-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.session-list{list-style:none}.session-item{display:flex;align-items:center;justify-content:space-between;padding:var(--space-md);border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}.session-item:last-child{border-bottom:none}.session-item:active{background:var(--bg-card-hover)}
+.session-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.session-name{font-size:15px;font-weight:600}.session-date{font-size:12px;color:var(--text-muted)}
+.session-profit{font-family:var(--font-mono);font-size:16px;font-weight:700;flex-shrink:0;margin-left:var(--space-sm)}.session-profit.positive{color:var(--accent)}.session-profit.negative{color:var(--red)}
+.fab{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom) + var(--space-md));right:var(--space-md);z-index:50;width:56px;height:56px;border-radius:var(--radius-full);border:none;background:var(--accent);color:#fff;font-size:28px;font-weight:300;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px var(--accent-glow);transition:transform .15s}.fab:active{transform:scale(.92)}
+.empty-state{display:flex;flex-direction:column;align-items:center;padding:var(--space-2xl) var(--space-md);text-align:center;color:var(--text-muted)}.empty-state-icon{font-size:48px;margin-bottom:var(--space-md);opacity:.5}.empty-state-text{font-size:14px;max-width:240px}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:600}.tag--blue{background:var(--blue-dim);color:var(--blue)}.tag--orange{background:var(--orange-dim);color:var(--orange)}.tag--green{background:var(--accent-dim);color:var(--accent)}.tag--red{background:var(--red-dim);color:var(--red)}
+.chart-tabs{display:flex;gap:4px;margin-bottom:var(--space-md);overflow-x:auto;scrollbar-width:none}.chart-tabs::-webkit-scrollbar{display:none}
+.chart-tab{flex-shrink:0;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-full);background:transparent;color:var(--text-muted);font-family:var(--font-body);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}.chart-tab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.chart-container{position:relative;min-height:100px}
+.list-header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--border)}.text-muted{color:var(--text-muted)}.text-sm{font-size:12px}
+.live-profit{text-align:center;font-family:var(--font-mono);font-size:24px;font-weight:700;padding:var(--space-md);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text-muted);margin:var(--space-sm) 0}.live-profit.positive{color:var(--accent);background:var(--accent-dim)}.live-profit.negative{color:var(--red);background:var(--red-dim)}
+.hidden{display:none!important}
+.rtp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}.rtp-row:last-child{border-bottom:none}.rtp-machine{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.rtp-values{display:flex;gap:var(--space-md);align-items:center;flex-shrink:0}.stat-value-sm{font-family:var(--font-mono);font-size:14px;font-weight:700}.stat-value-sm.positive{color:var(--accent)}.stat-value-sm.negative{color:var(--red)}
+.play-row{display:flex;align-items:center;justify-content:space-between;padding:var(--space-md);border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}.play-row:last-child{border-bottom:none}.play-row:active{background:var(--bg-card-hover)}.play-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.play-name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.open-badge{display:inline-block;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:700;background:var(--orange-dim);color:var(--orange);border:1px solid rgba(245,158,11,.3);margin-left:8px}
+.bonus-entry{background:var(--bg-input);border-radius:var(--radius-sm);padding:var(--space-md);margin-bottom:var(--space-sm);position:relative}
+.bonus-entry .bonus-remove{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:4px}
+.bonus-entry .form-row{margin-bottom:0}
+/* Machine chart bars */
+.mach-bar{display:flex;align-items:center;gap:var(--space-sm);margin-bottom:6px;font-size:13px}
+.mach-bar-name{width:110px;flex-shrink:0;text-align:right;color:var(--text-secondary);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mach-bar-track{flex:1;height:20px;background:var(--bg-input);border-radius:4px;overflow:hidden;position:relative}
+.mach-bar-fill{height:100%;border-radius:4px;min-width:2px;transition:width .3s}
+.mach-bar-val{width:80px;flex-shrink:0;font-family:var(--font-mono);font-weight:700;font-size:12px}
+/* Blackjack — card grid, verdict, hand log */
+.bj-hands-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bj-hand-zone{background:var(--bg-input);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px;cursor:pointer;transition:border-color .12s,background .12s}
+.bj-hand-zone.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--bg-input))}
+.bj-hand-zone.done{opacity:.55;border-style:dashed}
+.bj-split-banner{font-size:11px;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);padding:6px 10px;border-radius:var(--radius-sm);font-weight:700;letter-spacing:.6px;text-align:center;margin-bottom:8px}
+.bj-split-hands{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bj-hand-label{font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:.6px;font-weight:700;margin-bottom:6px}
+.bj-hand-total{margin-top:6px;font-size:13px;font-weight:700;font-family:var(--font-mono)}
+.bj-hand-total.positive{color:var(--accent)}.bj-hand-total.negative{color:var(--red)}
+.bj-bet-row{display:flex;align-items:center;gap:8px}
+.bj-side-row{display:flex;align-items:center;gap:8px}
+.bj-side-toggles{display:flex;flex:1;gap:4px;overflow-x:auto;padding-bottom:2px}
+.bj-side-toggles::-webkit-scrollbar{height:0}
+.bj-side-tog{padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .12s}
+.bj-side-tog.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.bj-side-tog.on.off-default{background:var(--bg-card);border-color:var(--text-muted);color:var(--text-muted)}
+.bj-action-btn{padding:12px 0;font-size:12px;font-weight:700;letter-spacing:.5px}
+.bj-card-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:var(--space-md)}
+.bj-card-btn{padding:14px 0;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:18px;font-weight:700;font-family:var(--font-mono);cursor:pointer;transition:all .12s}
+.bj-card-btn:active{transform:scale(.94)}.bj-card-btn.suit-r{color:#ef4444}
+.bj-hand-display{min-height:54px;background:var(--bg-input);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:var(--space-sm);display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:var(--space-sm)}
+.bj-hand-display .placeholder{color:var(--text-muted);font-size:13px;font-style:italic}
+.bj-card-chip{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-family:var(--font-mono);font-weight:700;font-size:16px;display:inline-flex;align-items:center;gap:4px}
+.bj-card-chip.r{color:#ef4444}
+.bj-verdict{padding:var(--space-lg);border-radius:var(--radius-md);text-align:center;margin:var(--space-md) 0;border:2px solid currentColor}
+.bj-verdict-action{font-size:32px;font-weight:900;letter-spacing:1px;line-height:1}
+.bj-verdict-detail{font-size:12px;color:var(--text-muted);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+.bj-section-title{font-size:11px;text-transform:uppercase;color:var(--text-muted);letter-spacing:.8px;margin:var(--space-md) 0 var(--space-sm);font-weight:700}
+.bj-streak{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--radius-full);font-size:11px;font-weight:700}
+.bj-streak.W{background:var(--accent-dim);color:var(--accent)}.bj-streak.L{background:var(--red-dim);color:var(--red)}
+.bj-hand-row{display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);border-bottom:1px solid var(--border);font-size:13px}
+.bj-hand-row:last-child{border-bottom:none}
+.bj-result{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:6px;font-size:11px;font-weight:800;flex-shrink:0}
+.bj-result.W{background:var(--accent);color:#fff}.bj-result.L{background:var(--red);color:#fff}.bj-result.P{background:var(--text-muted);color:#fff}.bj-result.BJ{background:#a855f7;color:#fff}.bj-result.SR{background:var(--text-muted);color:#fff;font-size:9px}
+.bj-mistake{color:var(--red);font-weight:700}
+.bj-toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)}
+.bj-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px var(--space-md);background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600}
+.bj-toggle.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+/* Slot bet batches */
+.batch-row{position:relative;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px}
+.batch-row .form-row{gap:8px}
+.batch-row .batch-remove{position:relative;align-self:flex-end;flex-shrink:0;width:32px;height:32px;background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:0}
+.batch-row .batch-remove:hover{color:var(--red);border-color:var(--red)}
+.batch-summary{margin-top:8px;font-size:12px;font-weight:600;color:var(--text-secondary);text-align:right}
+/* Dashboard — calendar heatmap (column-major: each col = 1 week) */
+.dsh-heatmap{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;width:100%}
+.dsh-heat-cell{aspect-ratio:1/1;border-radius:3px;transition:transform .12s}
+.dsh-heat-cell:hover{transform:scale(1.2);z-index:10;position:relative}
+/* Bonus Hunt */
+.bh-status{display:inline-block;padding:3px 9px;border-radius:var(--radius);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.bh-status.hunting{background:rgba(245,158,11,.18);color:var(--warning);border:1px solid rgba(245,158,11,.4)}
+.bh-status.opening{background:rgba(59,130,246,.18);color:#60a5fa;border:1px solid rgba(59,130,246,.4)}
+.bh-status.closed{background:rgba(148,163,184,.18);color:var(--text-muted);border:1px solid var(--border)}
+.bh-bonus-card{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-sm);align-items:center;padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;transition:all .15s}
+.bh-bonus-card.opened{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.3)}
+.bh-bonus-card.opened.bad{background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.3)}
+.bh-bonus-num{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-muted);width:24px;text-align:center}
+.bh-bonus-info{min-width:0}
+.bh-bonus-machine{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bh-bonus-meta{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-top:2px}
+.bh-bonus-meta.off-target{color:var(--warning)}
+.bh-bonus-payout{font-family:var(--font-mono);font-weight:700;font-size:13px;text-align:right;min-width:110px;line-height:1.3}
+.bh-bonus-payout.win{color:var(--success)}
+.bh-bonus-payout.loss{color:var(--danger)}
+.bh-bonus-payout input{width:90px;padding:6px 8px;font-size:13px;font-weight:700;font-family:var(--font-mono);text-align:right;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)}
+.bh-progress{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin:8px 0;border:1px solid var(--border)}
+.bh-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .3s}
+.bh-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-sm);margin-bottom:var(--space-md)}
+.bh-stat{padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}
+.bh-stat-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.bh-stat-value{font-family:var(--font-mono);font-weight:700;font-size:18px}
+.bh-x{font-family:var(--font-mono);font-weight:700;font-size:11px;padding:2px 6px;border-radius:3px;background:var(--bg);border:1px solid var(--border);color:var(--text-muted)}
+.bh-x.good{color:var(--success);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08)}
+.bh-x.bad{color:var(--danger);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<header class="app-header"><div><h1 class="app-title">Casino<span class="accent">Tracker</span></h1></div><span class="bankroll-badge" id="hBR">—</span></header>
+<main class="app-main" id="appMain">
+  <section class="view active" id="viewSlots" data-view="slots"></section>
+  <section class="view" id="viewBonusHunt" data-view="hunt"></section>
+  <section class="view" id="viewBlackjack" data-view="blackjack"></section>
+  <section class="view" id="viewDashboard" data-view="dashboard"></section>
+  <section class="view" id="viewSettings" data-view="settings"><div class="view-inner">
+    <h2 class="view-title">Paramètres</h2>
+    <div class="settings-card"><h3 class="card-title">💰 Bankroll</h3><div class="form-group"><label>Bankroll initiale (€)</label><input type="number" id="sB" class="input" placeholder="1000" min="0" step="50"></div><div class="form-group"><label>Devise</label><select id="sC" class="input"><option value="EUR">€ EUR</option><option value="USD">$ USD</option><option value="GBP">£ GBP</option></select></div></div>
+    <div class="settings-card"><h3 class="card-title">🚨 Alertes</h3><div class="form-group"><label>Stop Loss / session (€)</label><input type="number" id="sSL" class="input" placeholder="200" min="0" step="10"></div><div class="form-group"><label>Stop Win / session (€)</label><input type="number" id="sSW" class="input" placeholder="500" min="0" step="10"></div></div>
+    <div class="settings-card"><h3 class="card-title">🎰 Bibliothèque machines</h3><p class="text-muted text-sm" style="margin-bottom:var(--space-md)">Pré-enregistre tes machines</p><div id="machLib"></div><button class="btn btn-outline" id="bAddMach" style="margin-top:var(--space-sm)">+ Ajouter une machine</button></div>
+    <div class="settings-card"><h3 class="card-title">📁 Données</h3><div class="btn-group-vertical"><button class="btn btn-outline" id="bExp">💾 Backup JSON</button><button class="btn btn-outline" id="bImp">📥 Importer</button><input type="file" id="fImp" accept=".json" style="display:none"></div><div class="separator"></div><button class="btn btn-danger" id="bRst">🗑️ Tout réinitialiser</button></div>
+  </div></section>
+</main>
+<nav class="bottom-nav"><button class="nav-tab active" data-target="slots"><span class="nav-icon">🎰</span><span class="nav-label">Slots</span></button><button class="nav-tab" data-target="hunt"><span class="nav-icon">🎯</span><span class="nav-label">Hunt</span></button><button class="nav-tab" data-target="blackjack"><span class="nav-icon">🃏</span><span class="nav-label">BJ</span></button><button class="nav-tab" data-target="dashboard"><span class="nav-icon">📊</span><span class="nav-label">Stats</span></button><button class="nav-tab" data-target="settings"><span class="nav-icon">⚙️</span><span class="nav-label">Config</span></button></nav>
+<div class="modal-overlay" id="mOv"><div class="modal"><div class="modal-header"><h3 class="modal-title" id="mT"></h3><button class="modal-close" id="mX">✕</button></div><div class="modal-body" id="mB"></div><div class="modal-footer" id="mF"></div></div></div>
+<div class="toast-container" id="tC"></div>
+<script>
+/* ═══ DB v5 — added Bonus Hunt tables ═══ */
+const db=new Dexie('CasinoTracker');
+db.version(4).stores({settings:'key',slotSessions:'++id, date',slotPlays:'++id, sessionId, machineName',slotMachines:'++id, name',bjSessions:'++id, date',bjHands:'++id, sessionId',bankrollLog:'++id, date, source'});
+db.version(5).stores({settings:'key',slotSessions:'++id, date',slotPlays:'++id, sessionId, machineName',slotMachines:'++id, name',bjSessions:'++id, date',bjHands:'++id, sessionId',bankrollLog:'++id, date, source',bhSessions:'++id, date, status',bhBonuses:'++id, sessionId, order'});
+const S={defaults:{bankrollInitial:null,currency:'EUR',stopLoss:null,stopWin:null,bjH17:false,bjDAS:true,bjSurrender:false,bjBJPayout:1.5},async get(k){const r=await db.settings.get(k);return r?r.value:(this.defaults[k]??null)},async set(k,v){return db.settings.put({key:k,value:v})}};
+const BR={async cur(){
+  const i=await S.get('bankrollInitial');if(i===null)return null;
+  /* Derive bankroll directly from session state — no log table needed.
+     Closed session: net = cashout - deposit. Open session: deposit is "locked" → -deposit. */
+  const slotSess=await db.slotSessions.toArray();
+  const bjSess=await db.bjSessions.toArray();
+  const bhSess=await db.bhSessions.toArray();
+  let bankroll=i;
+  for(const s of [...slotSess,...bjSess,...bhSess]){
+    if(s.cashout!=null)bankroll+=(s.cashout||0)-(s.deposit||0);
+    else bankroll-=(s.deposit||0);
+  }
+  return bankroll;
+}};
+const DIO={async expJSON(){return JSON.stringify({version:4,date:new Date().toISOString(),settings:await db.settings.toArray(),slotSessions:await db.slotSessions.toArray(),slotPlays:await db.slotPlays.toArray(),slotMachines:await db.slotMachines.toArray(),bjSessions:await db.bjSessions.toArray(),bjHands:await db.bjHands.toArray(),bankrollLog:await db.bankrollLog.toArray()},null,2)},async impJSON(j){const d=JSON.parse(j);if(!d.version)throw new Error('Invalid');const t=[db.settings,db.slotSessions,db.slotPlays,db.slotMachines,db.bjSessions,db.bjHands,db.bankrollLog];await db.transaction('rw',...t,async()=>{for(const x of t)await x.clear();for(const k of['settings','slotSessions','slotPlays','slotMachines','bjSessions','bjHands','bankrollLog'])if(d[k]?.length)await db[k].bulkAdd(d[k])})},dl(c,f,m){const b=new Blob(['\ufeff'+c],{type:m}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)},async reset(){const t=[db.settings,db.slotSessions,db.slotPlays,db.slotMachines,db.bjSessions,db.bjHands,db.bankrollLog];await db.transaction('rw',...t,async()=>{for(const x of t)await x.clear()})}};
+const SYM={EUR:'€',USD:'$',GBP:'£'};function sy(c){return SYM[c]||c}
+function fC(a,c='EUR'){return(a>=0?'+':'')+a.toFixed(2).replace('.',',')+sy(c)}
+function fA(a,c='EUR'){return a.toFixed(2).replace('.',',')+sy(c)}
+function fD(iso){return new Date(iso).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function trn(s,m){return s.length>m?s.slice(0,m-1)+'…':s}
+let modalBusy=false;
+const M={open({title='',body='',footer=''}={}){document.getElementById('mT').textContent=title;document.getElementById('mB').innerHTML=body;document.getElementById('mF').innerHTML=footer;document.getElementById('mOv').classList.add('open');modalBusy=false},close(){document.getElementById('mOv').classList.remove('open')},async confirm({title,message,confirmText='Confirmer',cancelText='Annuler',danger=false}){return new Promise(res=>{this.open({title,body:'<p style="color:var(--text-secondary);font-size:14px">'+message+'</p>',footer:'<button class="btn btn-outline" style="flex:1" id="_mC">'+cancelText+'</button><button class="btn '+(danger?'btn-danger':'btn-primary')+'" style="flex:1" id="_mK">'+confirmText+'</button>'});document.getElementById('_mC').onclick=()=>{this.close();res(false)};document.getElementById('_mK').onclick=()=>{this.close();res(true)}})},async waitClose(){this.close();return new Promise(r=>setTimeout(r,350))}};
+const T={show(m,t='success',d=2500){const c=document.getElementById('tC'),e=document.createElement('div');e.className='toast toast--'+t;e.textContent=m;e.style.setProperty('--toast-dur',d+'ms');c.appendChild(e);setTimeout(()=>e.remove(),d+400)},ok(m){this.show(m)},err(m){this.show(m,'error',3500)},warn(m){this.show(m,'warning')}};
+
+/* ═══ STATS — bonuses array, RTP & advanced bonus metrics ═══ */
+/* Compute exact wager for a slot play — prefer spinBatches if present */
+const playWager=p=>{
+  if(Array.isArray(p.spinBatches)&&p.spinBatches.length){
+    return p.spinBatches.reduce((s,b)=>s+(b.spins||0)*(b.bet||0),0);
+  }
+  return (p.totalSpins||0)*(p.betPerSpin||0);
+};
+const playSpins=p=>{
+  if(Array.isArray(p.spinBatches)&&p.spinBatches.length){
+    return p.spinBatches.reduce((s,b)=>s+(b.spins||0),0);
+  }
+  return p.totalSpins||0;
+};
+const SS={
+  sess(sessions){const td=sessions.reduce((s,x)=>s+(x.deposit||0),0),tc=sessions.reduce((s,x)=>s+(x.cashout||0),0);return{dep:td,co:tc,profit:tc-td,roi:td>0?((tc-td)/td*100):0}},
+  _med(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2},
+  _std(a){if(a.length<2)return 0;const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)},
+  rtpClass(r){return r>=96?'positive':r>=92?'':'negative'},
+  plays(plays){
+    const tp=plays.reduce((s,p)=>s+(p.balanceOut-p.balanceIn),0);
+    const totalBet=plays.reduce((s,p)=>s+playWager(p),0);
+    let totalBonuses=0,totalSpins=0,spinsToSum=0,spinsToCount=0;
+    const multis=[];
+    plays.forEach(p=>{
+      const b=p.bonuses||[];totalBonuses+=b.length;totalSpins+=playSpins(p);
+      b.forEach(x=>{if(x.multiplier)multis.push(x.multiplier);if(x.spinsToTrigger){spinsToSum+=x.spinsToTrigger;spinsToCount++}});
+    });
+    const avgMulti=multis.length?multis.reduce((a,b)=>a+b,0)/multis.length:0;
+    return{
+      profit:tp,totalBet,
+      rtp:totalBet>0?((totalBet+tp)/totalBet*100):0,
+      bFreq:totalSpins>0?(totalBonuses/totalSpins*100):0,
+      avgMulti,
+      maxMulti:multis.length?Math.max(...multis):0,
+      minMulti:multis.length?Math.min(...multis):0,
+      medianMulti:this._med(multis),
+      stdMulti:this._std(multis),
+      avgSpinsTo:spinsToCount>0?Math.round(spinsToSum/spinsToCount):0,
+      totalBonuses,totalSpins,total:plays.length
+    };
+  },
+  byMach(plays){
+    const g={};plays.forEach(p=>{const n=p.machineName;if(!g[n])g[n]=[];g[n].push(p)});
+    return Object.entries(g).map(([name,pls])=>{
+      const profit=pls.reduce((s,p)=>s+(p.balanceOut-p.balanceIn),0);
+      const totalBet=pls.reduce((s,p)=>s+playWager(p),0);
+      const totalSpins=pls.reduce((s,p)=>s+playSpins(p),0);
+      const bonuses=pls.reduce((s,p)=>s+(p.bonuses||[]).length,0);
+      return{name,profit,plays:pls.length,bonuses,totalBet,totalSpins,rtp:totalBet>0?((totalBet+profit)/totalBet*100):0};
+    });
+  },
+  /* Merge per-machine slot plays + hunt bonuses (same machine name).
+     Hunt bonuses contribute: cost (= wager), payout (= return), spinsToTrigger, +1 bonus count. */
+  byMachWithHunt(plays,huntBonuses){
+    const merged={};
+    /* Slots first */
+    plays.forEach(p=>{
+      const n=p.machineName;if(!merged[n])merged[n]={name:n,profit:0,plays:0,bonuses:0,totalBet:0,totalSpins:0,spinsToList:[],multis:[],huntCount:0};
+      merged[n].profit+=(p.balanceOut-p.balanceIn);
+      merged[n].plays++;
+      merged[n].totalBet+=playWager(p);
+      merged[n].totalSpins+=playSpins(p);
+      (p.bonuses||[]).forEach(b=>{
+        merged[n].bonuses++;
+        if(b.spinsToTrigger)merged[n].spinsToList.push(b.spinsToTrigger);
+        if(b.multiplier)merged[n].multis.push(b.multiplier);
+      });
+    });
+    /* Then hunts */
+    huntBonuses.forEach(b=>{
+      const n=b.machine;if(!n)return;
+      if(!merged[n])merged[n]={name:n,profit:0,plays:0,bonuses:0,totalBet:0,totalSpins:0,spinsToList:[],multis:[],huntCount:0};
+      merged[n].totalBet+=(b.cost||0);
+      merged[n].totalSpins+=(b.spinsToTrigger||0);
+      merged[n].bonuses++;
+      merged[n].huntCount++;
+      if(b.spinsToTrigger)merged[n].spinsToList.push(b.spinsToTrigger);
+      if(b.payout!=null){
+        merged[n].profit+=(b.payout-(b.cost||0));
+        if(b.cost>0)merged[n].multis.push(b.payout/b.cost);
+      }
+    });
+    return Object.values(merged).map(m=>({
+      ...m,
+      rtp:m.totalBet>0?((m.totalBet+m.profit)/m.totalBet*100):0,
+      avgSpinsTo:m.spinsToList.length?Math.round(m.spinsToList.reduce((a,b)=>a+b,0)/m.spinsToList.length):0,
+      avgMulti:m.multis.length?m.multis.reduce((a,b)=>a+b,0)/m.multis.length:0,
+      maxMulti:m.multis.length?Math.max(...m.multis):0
+    }));
+  },
+  /* Bonus ranking: returns hunt bonuses (only opened ones) sorted by P/L desc.
+     Each: {machine, cost, payout, pnl, mult, sessionTitle, sessionDate} */
+  bonusRanking(huntBonuses,huntSessionsById){
+    return huntBonuses
+      .filter(b=>b.payout!=null&&b.cost>0)
+      .map(b=>{
+        const sess=huntSessionsById[b.sessionId];
+        return{
+          ...b,
+          pnl:b.payout-(b.cost||0),
+          mult:b.payout/b.cost,
+          sessionTitle:sess?(sess.title||'Hunt #'+sess.id):'',
+          sessionDate:sess?sess.date:''
+        };
+      })
+      .sort((a,b)=>b.pnl-a.pnl);
+  }
+};
+
+/* ═══ BLACKJACK BASIC STRATEGY — 4-8 decks, DAS ═══
+   Dealer upcard index: 0..9 = 2,3,4,5,6,7,8,9,T,A
+   Codes (1 char per cell):
+     H=Hit  S=Stand
+     D=Double else Hit       d=Double else Stand
+     P=Split                 p=Split if DAS else Hit
+     R=Surrender else Hit    r=Surrender else Stand   q=Surrender else Split
+*/
+const BJ_DK=['2','3','4','5','6','7','8','9','T','A'];
+const STRAT={
+  /* HARD TOTALS — total without A=11 */
+  hardS17:{
+    5:'HHHHHHHHHH', 6:'HHHHHHHHHH', 7:'HHHHHHHHHH', 8:'HHHHHHHHHH',
+    9:'HDDDDHHHHH', 10:'DDDDDDDDHH', 11:'DDDDDDDDDH',
+    12:'HHSSSHHHHH', 13:'SSSSSHHHHH', 14:'SSSSSHHHHH',
+    15:'SSSSSHHHRH', 16:'SSSSSHHRRR',
+    17:'SSSSSSSSSS', 18:'SSSSSSSSSS', 19:'SSSSSSSSSS', 20:'SSSSSSSSSS', 21:'SSSSSSSSSS'
+  },
+  hardH17:{
+    5:'HHHHHHHHHH', 6:'HHHHHHHHHH', 7:'HHHHHHHHHH', 8:'HHHHHHHHHH',
+    9:'HDDDDHHHHH', 10:'DDDDDDDDHH', 11:'DDDDDDDDDD',
+    12:'HHSSSHHHHH', 13:'SSSSSHHHHH', 14:'SSSSSHHHHH',
+    15:'SSSSSHHHRR', 16:'SSSSSHHRRR',
+    17:'SSSSSSSSSR', 18:'SSSSSSSSSS', 19:'SSSSSSSSSS', 20:'SSSSSSSSSS', 21:'SSSSSSSSSS'
+  },
+  /* SOFT TOTALS — A counted as 11. Key = OTHER card (2..9) */
+  softS17:{
+    2:'HHHDDHHHHH', 3:'HHHDDHHHHH', 4:'HHDDDHHHHH', 5:'HHDDDHHHHH',
+    6:'HDDDDHHHHH', 7:'SddddSSHHH', 8:'SSSSSSSSSS', 9:'SSSSSSSSSS'
+  },
+  softH17:{
+    2:'HHHDDHHHHH', 3:'HHHDDHHHHH', 4:'HHDDDHHHHH', 5:'HHDDDHHHHH',
+    6:'DDDDDHHHHH', 7:'dddddSSHHH', 8:'SSSSdSSSSS', 9:'SSSSSSSSSS'
+  },
+  /* PAIRS — key = card value (1=Ace, 10=T) */
+  pair:{
+    1:'PPPPPPPPPP', 2:'ppPPPPHHHH', 3:'ppPPPPHHHH', 4:'HHHppHHHHH',
+    5:'DDDDDDDDHH', 6:'pPPPPHHHHH', 7:'PPPPPPHHHH', 8:'PPPPPPPPPP',
+    9:'PPPPPSPPSS', 10:'SSSSSSSSSS'
+  }
+};
+/* Card helpers — value of each card (A=1 special, T/J/Q/K=10) */
+const cv=c=>c==='A'?1:c==='T'||c==='J'||c==='Q'||c==='K'?10:+c;
+const handTotal=cs=>{
+  if(!cs.length)return{total:0,soft:false,isBJ:false,isPair:false,isBust:false};
+  /* Sum all aces as 1 first, then promote ONE ace to 11 if possible (two would always bust) */
+  let total=cs.reduce((s,c)=>s+cv(c),0);
+  const soft=cs.includes('A')&&total+10<=21;
+  if(soft)total+=10;
+  return{
+    total,soft,
+    isBJ:cs.length===2&&total===21,
+    isPair:cs.length===2&&cv(cs[0])===cv(cs[1]),
+    isBust:total>21
+  };
+};
+/* Strategy lookup — returns {action, code} */
+const stratLookup=(playerCards,dealerUp,opts)=>{
+  const{h17=false,das=true,surrender=false,canDouble=true,canSplit=true}=opts||{};
+  const di=BJ_DK.indexOf(dealerUp);if(di<0)return null;
+  const h=handTotal(playerCards);
+  if(h.isBust)return{action:'BUST',code:'X'};
+  if(h.isBJ)return{action:'BLACKJACK',code:'BJ'};
+  let raw;
+  if(h.isPair&&canSplit&&playerCards.length===2){
+    const pv=cv(playerCards[0]);raw=STRAT.pair[pv]?.[di];
+  }
+  if(!raw&&h.soft&&playerCards.length===2){
+    const other=playerCards.find(c=>c!=='A');
+    if(other){const ov=cv(other);raw=(h17?STRAT.softH17:STRAT.softS17)[ov]?.[di]}
+  }
+  if(!raw){
+    const tbl=h17?STRAT.hardH17:STRAT.hardS17;
+    raw=tbl[Math.min(21,Math.max(5,h.total))]?.[di];
+  }
+  if(!raw)return{action:'STAND',code:'S'};
+  let action;
+  switch(raw){
+    case'H':action='HIT';break;
+    case'S':action='STAND';break;
+    case'D':action=canDouble?'DOUBLE':'HIT';break;
+    case'd':action=canDouble?'DOUBLE':'STAND';break;
+    case'P':action='SPLIT';break;
+    case'p':action=das?'SPLIT':'HIT';break;
+    case'R':action=surrender?'SURRENDER':'HIT';break;
+    case'r':action=surrender?'SURRENDER':'STAND';break;
+    case'q':action=surrender?'SURRENDER':'SPLIT';break;
+    default:action='STAND';
+  }
+  return{action,code:raw};
+};
+const ACTION_LABEL={HIT:'TIRER',STAND:'RESTER',DOUBLE:'DOUBLER',SPLIT:'SPLIT',SURRENDER:'ABANDONNER',BUST:'BUST',BLACKJACK:'BLACKJACK'};
+const ACTION_COLOR={HIT:'var(--orange)',STAND:'var(--accent)',DOUBLE:'var(--blue)',SPLIT:'#a855f7',SURRENDER:'var(--text-muted)',BUST:'var(--red)',BLACKJACK:'var(--accent)'};
+const PP_OPTS=[{m:6,l:'Mixte 6×'},{m:12,l:'Couleur 12×'},{m:25,l:'Parfaite 25×'}];
+const TP_OPTS=[{m:5,l:'Flush 5×'},{m:10,l:'Suite 10×'},{m:30,l:'Brelan 30×'},{m:40,l:'Suite Cl. 40×'},{m:100,l:'Brelan Cl. 100×'}];
+const SL={
+  async init(){await this.render()},
+  async render(){
+    const el=document.getElementById('viewSlots'),sess=await db.slotSessions.orderBy('date').reverse().toArray(),ap=await db.slotPlays.toArray(),c=await S.get('currency')||'EUR';
+    /* Fetch hunt bonuses to merge into machine stats (only opened ones contribute to P/L; all contribute to bet/spins) */
+    const allHuntBonuses=await db.bhBonuses.toArray();
+    el.innerHTML='';
+    if(!sess.length&&allHuntBonuses.length===0){el.innerHTML='<div class="view-inner"><div class="empty-state"><span class="empty-state-icon">🎰</span><p class="empty-state-text">Aucune session.<br>Appuie sur <strong>+</strong> pour commencer.</p></div></div>';el.appendChild(this._fab());return}
+    if(!sess.length){el.innerHTML='<div class="view-inner"><div class="empty-state"><span class="empty-state-icon">🎰</span><p class="empty-state-text">Aucune session slots.<br>Tu as des bonus de hunt — vois l\'onglet 🎯 Hunt.</p></div></div>';el.appendChild(this._fab());return}
+    const ss=SS.sess(sess),ps=SS.plays(ap);
+    let html='<div class="view-inner"><h2 class="view-title">Slots Tracker</h2>';
+    html+='<div class="stat-grid"><div class="stat-box"><div class="stat-value '+(ss.profit>=0?'positive':'negative')+'">'+fC(ss.profit,c)+'</div><div class="stat-label">Profit / Perte</div></div>';
+    html+='<div class="stat-box"><div class="stat-value '+(ss.roi>=0?'positive':'negative')+'">'+ss.roi.toFixed(1)+'%</div><div class="stat-label">ROI global</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+(ps.avgMulti>0?'x'+ps.avgMulti.toFixed(0):'—')+'</div><div class="stat-label">Multi. moy.</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+(ps.avgSpinsTo>0?ps.avgSpinsTo:'—')+'</div><div class="stat-label">Spins / bonus</div></div></div>';
+    html+=this._perfCard(ps,c);
+    html+=this._machList(ap,allHuntBonuses,c);
+    html+='<div class="settings-card"><div class="chart-tabs" id="cT"><button class="chart-tab active" data-c="bankroll">Bankroll</button><button class="chart-tab" data-c="roi">ROI</button><button class="chart-tab" data-c="machines">Machines</button></div><div class="chart-container" id="cC"></div></div>';
+    html+='<div class="settings-card" style="padding:0"><div class="list-header"><h3 class="card-title" style="margin:0">Sessions</h3><span class="text-muted text-sm">'+sess.length+'</span></div><ul class="session-list" id="sL"></ul></div></div>';
+    el.innerHTML=html;el.appendChild(this._fab());
+    this._sessList(sess,ap,c);
+    document.getElementById('cT')?.addEventListener('click',e=>{const t=e.target.closest('.chart-tab');if(!t)return;document.querySelectorAll('#cT .chart-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');this._draw(t.dataset.c,sess,ap,c)});
+    this._draw('bankroll',sess,ap,c);
+  },
+  _fab(){const f=document.createElement('button');f.className='fab';f.id='fabS';f.textContent='+';return f},
+  _perfCard(ps,c){
+    if(ps.totalBet<=0&&!ps.maxMulti)return'';
+    let rows='';
+    if(ps.totalBet>0)rows+='<div class="rtp-row"><div class="rtp-machine">RTP global</div><div class="rtp-values"><span class="stat-value-sm '+SS.rtpClass(ps.rtp)+'">'+ps.rtp.toFixed(1)+'%</span><span class="text-muted text-sm">'+fA(ps.totalBet,c)+' misés</span></div></div>';
+    if(ps.maxMulti>0)rows+='<div class="rtp-row"><div class="rtp-machine">🔥 Plus gros bonus</div><div class="rtp-values"><span class="stat-value-sm positive">x'+ps.maxMulti.toFixed(0)+'</span></div></div>';
+    if(ps.minMulti>0&&ps.minMulti!==ps.maxMulti)rows+='<div class="rtp-row"><div class="rtp-machine">❄️ Plus petit bonus</div><div class="rtp-values"><span class="stat-value-sm negative">x'+ps.minMulti.toFixed(0)+'</span></div></div>';
+    if(ps.medianMulti>0&&ps.totalBonuses>=3)rows+='<div class="rtp-row"><div class="rtp-machine">Médiane</div><div class="rtp-values"><span class="stat-value-sm">x'+ps.medianMulti.toFixed(0)+'</span></div></div>';
+    if(ps.stdMulti>0&&ps.totalBonuses>=3)rows+='<div class="rtp-row"><div class="rtp-machine">Volatilité (σ)</div><div class="rtp-values"><span class="stat-value-sm">±'+ps.stdMulti.toFixed(1)+'</span></div></div>';
+    return rows?'<div class="settings-card"><h3 class="card-title">📊 Performance</h3>'+rows+'</div>':'';
+  },
+  _machList(plays,huntBonuses,c){
+    const bm=SS.byMachWithHunt(plays,huntBonuses);if(!bm.length)return'';
+    bm.sort((a,b)=>b.profit-a.profit);
+    const showBadges=bm.length>=2;
+    return'<div class="settings-card"><h3 class="card-title">🎰 Par machine</h3>'+bm.map((m,i)=>{
+      const badge=showBadges?(i===0?'🔥 ':i===bm.length-1?'❄️ ':''):'';
+      const rtpStr=m.totalBet>0?'<span class="stat-value-sm '+SS.rtpClass(m.rtp)+'" title="RTP">'+m.rtp.toFixed(0)+'%</span>':'';
+      const bonusBadge=m.bonuses?'<span class="tag tag--blue">'+m.bonuses+' bonus'+(m.huntCount>0?' · '+m.huntCount+'🎯':'')+'</span>':'';
+      const playsTxt=m.plays>0?(m.plays+'x'):(m.huntCount>0?'hunt only':'');
+      return'<div class="rtp-row"><div class="rtp-machine">'+badge+esc(trn(m.name,16))+'<span class="text-muted text-sm"> · '+playsTxt+'</span> '+bonusBadge+'</div><div class="rtp-values">'+rtpStr+'<span class="stat-value-sm '+(m.profit>=0?'positive':'negative')+'">'+fC(m.profit,c)+'</span></div></div>';
+    }).join('')+'</div>';
+  },
+  _sessList(sess,ap,c){const ul=document.getElementById('sL');if(!ul)return;ul.innerHTML=sess.map(s=>{const pl=ap.filter(p=>p.sessionId===s.id),pr=(s.cashout||0)-(s.deposit||0),roi=s.deposit>0&&s.cashout!=null?((s.cashout-s.deposit)/s.deposit*100):0,names=[...new Set(pl.map(p=>p.machineName))],lb=names.length>2?names.slice(0,2).join(', ')+' +'+(names.length-2):names.join(', ')||'—',isOpen=s.cashout==null;return'<li class="session-item" data-id="'+s.id+'"><div class="session-info"><span class="session-name">'+fD(s.date)+' · '+pl.length+' machine'+(pl.length>1?'s':'')+(isOpen?'<span class="open-badge">En cours</span>':'')+'</span><span class="session-date">'+lb+' · Dépôt '+fA(s.deposit||0,c)+'</span></div><div style="text-align:right">'+(isOpen?'<span style="color:var(--orange)">—</span>':'<div class="session-profit '+(pr>=0?'positive':'negative')+'">'+fC(pr,c)+'</div><div class="text-muted text-sm">'+(roi>=0?'+':'')+roi.toFixed(0)+'%</div>')+'</div></li>'}).join('');ul.querySelectorAll('.session-item').forEach(li=>li.addEventListener('click',()=>this.detail(+li.dataset.id)))},
+
+  /* ═══ CHART — SVG bankroll/roi, HTML bars for machines ═══ */
+  _draw(type,sess,plays,c){
+    const el=document.getElementById('cC');if(!el)return;
+    const G='#10b981',R='#ef4444',TX='#94a3b8',BD='#1e293b';
+    const closed=sess.filter(s=>s.cashout!=null),sorted=[...closed].sort((a,b)=>a.date.localeCompare(b.date));
+    if(type==='bankroll'){
+      let cum=0;const pts=sorted.map(s=>{cum+=(s.cashout||0)-(s.deposit||0);return cum});
+      if(!pts.length){el.innerHTML='<div style="text-align:center;padding:40px" class="text-muted">Aucune session clôturée</div>';return}
+      const W=el.clientWidth||320,H=200,P=40,PR=50;
+      const labels=sorted.map(s=>fD(s.date)),min=Math.min(0,...pts),max=Math.max(0,...pts),range=max-min||1;
+      const xStep=(W-PR-10)/(pts.length-1||1),yScale=(H-P-20)/range;
+      const points=pts.map((v,i)=>[PR+i*xStep,H-P-(v-min)*yScale]);
+      const line=points.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+      const area=line+' L'+points[points.length-1][0].toFixed(1)+','+(H-P)+' L'+PR+','+(H-P)+' Z';
+      const col=pts[pts.length-1]>=0?G:R;
+      let svg='<svg width="100%" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+      for(let i=0;i<=4;i++){const v=min+(range/4)*i;const y=H-P-(v-min)*yScale;svg+='<line x1="'+PR+'" y1="'+y.toFixed(1)+'" x2="'+W+'" y2="'+y.toFixed(1)+'" stroke="'+BD+'"/><text x="'+(PR-4)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" fill="'+TX+'" font-size="10">'+Math.round(v)+'</text>'}
+      const ls=Math.max(1,Math.floor(pts.length/6));for(let i=0;i<pts.length;i+=ls)svg+='<text x="'+points[i][0].toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="'+TX+'" font-size="10">'+labels[i]+'</text>';
+      svg+='<path d="'+area+'" fill="'+col+'" opacity="0.15"/><path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2"/>';
+      points.forEach((p,i)=>svg+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3" fill="'+col+'"><title>'+labels[i]+': '+fC(pts[i],c)+'</title></circle>');
+      el.innerHTML=svg+'</svg>';
+    } else if(type==='roi'){
+      const rois=sorted.map(s=>s.deposit>0?((s.cashout-s.deposit)/s.deposit*100):0);
+      if(!rois.length){el.innerHTML='<div style="text-align:center;padding:40px" class="text-muted">Aucune session clôturée</div>';return}
+      const W=el.clientWidth||320,H=200,PR=50,labels=sorted.map(s=>fD(s.date)),absMax=Math.max(10,...rois.map(Math.abs));
+      const gap=(W-PR-10)/rois.length,barW=Math.min(30,Math.max(8,gap-2)),mid=H/2,scale=(H/2-30)/absMax;
+      let svg='<svg width="100%" height="'+H+'" viewBox="0 0 '+W+' '+H+'">';
+      [-absMax,-absMax/2,0,absMax/2,absMax].forEach(v=>{const y=mid-v*scale;svg+='<line x1="'+PR+'" y1="'+y.toFixed(1)+'" x2="'+W+'" y2="'+y.toFixed(1)+'" stroke="'+BD+'"/><text x="'+(PR-4)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" fill="'+TX+'" font-size="10">'+(v>=0?'+':'')+Math.round(v)+'%</text>'});
+      rois.forEach((v,i)=>{const x=PR+i*gap+(gap-barW)/2,h=Math.abs(v)*scale,y=v>=0?mid-h:mid;svg+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW+'" height="'+Math.max(1,h).toFixed(1)+'" rx="2" fill="'+(v>=0?G:R)+'"><title>'+labels[i]+': '+(v>=0?'+':'')+v.toFixed(0)+'%</title></rect>'});
+      const ls=Math.max(1,Math.floor(rois.length/6));for(let i=0;i<rois.length;i+=ls)svg+='<text x="'+(PR+i*gap+gap/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" fill="'+TX+'" font-size="10">'+labels[i]+'</text>';
+      el.innerHTML=svg+'</svg>';
+    } else if(type==='machines'){
+      const bm=SS.byMach(plays).sort((a,b)=>b.profit-a.profit).slice(0,15);
+      if(!bm.length){el.innerHTML='<div style="text-align:center;padding:40px" class="text-muted">Aucune machine</div>';return}
+      const absMax=Math.max(1,...bm.map(m=>Math.abs(m.profit)));
+      el.innerHTML=bm.map(m=>{const pct=Math.abs(m.profit)/absMax*100;const col=m.profit>=0?G:R;return'<div class="mach-bar"><div class="mach-bar-name" title="'+esc(m.name)+'">'+esc(trn(m.name,14))+'</div><div class="mach-bar-track"><div class="mach-bar-fill" style="width:'+pct.toFixed(0)+'%;background:'+col+'"></div></div><div class="mach-bar-val" style="color:'+col+'">'+fC(m.profit,c)+'</div></div>'}).join('');
+    }
+  },
+
+  /* ═══ SESSION DETAIL ═══ */
+  async detail(id){
+    const s=await db.slotSessions.get(id);if(!s)return;
+    const plays=await db.slotPlays.where('sessionId').equals(id).toArray(),c=await S.get('currency')||'EUR';
+    const isOpen=s.cashout==null;const pr=isOpen?null:(s.cashout-s.deposit);const roi=(!isOpen&&s.deposit>0)?((s.cashout-s.deposit)/s.deposit*100):0;
+    const playSum=plays.reduce((sum,p)=>sum+(p.balanceOut-p.balanceIn),0);
+    const totalBonuses=plays.reduce((sum,p)=>sum+(p.bonuses||[]).length,0);
+    const rows=plays.length?plays.map(p=>{
+      const pp=p.balanceOut-p.balanceIn;const b=p.bonuses||[];
+      const tags=b.length?b.map(x=>'<span class="tag tag--blue">x'+(x.multiplier||'?')+(x.spinsToTrigger?' @'+x.spinsToTrigger+'sp':'')+'</span>').join(' '):'';
+      /* Bet display: multi-batch shows breakdown, single-bet shows simple */
+      const batches=Array.isArray(p.spinBatches)&&p.spinBatches.length?p.spinBatches:null;
+      let betLbl;
+      if(batches&&batches.length>1){
+        const ts=batches.reduce((s,b)=>s+(b.spins||0),0);
+        betLbl=batches.map(b=>(b.spins||0)+'@'+(b.bet||0)+sy(c)).join(' + ')+' · '+ts+' sp';
+      } else {
+        const bet=batches?batches[0].bet:p.betPerSpin;
+        const sp=batches?batches[0].spins:p.totalSpins;
+        betLbl='Mise '+bet+sy(c)+(sp?' · '+sp+' sp':'');
+      }
+      return'<div class="play-row" data-pid="'+p.id+'"><div class="play-info"><span class="play-name">'+esc(p.machineName)+' '+tags+'</span><span class="text-muted text-sm">'+betLbl+' · '+fA(p.balanceIn,c)+' → '+fA(p.balanceOut,c)+'</span></div><span class="session-profit '+(pp>=0?'positive':'negative')+'">'+fC(pp,c)+'</span></div>'
+    }).join(''):'<div style="padding:var(--space-lg);text-align:center" class="text-muted">Aucune machine</div>';
+
+    const statsHtml=isOpen
+      ?'<div class="stat-grid"><div class="stat-box"><div class="stat-value">'+fA(s.deposit||0,c)+'</div><div class="stat-label">Dépôt</div></div><div class="stat-box"><div class="stat-value" style="color:var(--orange)">En cours</div><div class="stat-label">Cashout</div></div><div class="stat-box"><div class="stat-value '+(playSum>=0?'positive':'negative')+'">'+fC(playSum,c)+'</div><div class="stat-label">P/L machines</div></div><div class="stat-box"><div class="stat-value">'+totalBonuses+'</div><div class="stat-label">Bonus</div></div></div>'
+      :'<div class="stat-grid"><div class="stat-box"><div class="stat-value">'+fA(s.deposit||0,c)+'</div><div class="stat-label">Dépôt</div></div><div class="stat-box"><div class="stat-value">'+fA(s.cashout,c)+'</div><div class="stat-label">Cashout</div></div><div class="stat-box"><div class="stat-value '+(pr>=0?'positive':'negative')+'">'+fC(pr,c)+'</div><div class="stat-label">Résultat</div></div><div class="stat-box"><div class="stat-value '+(roi>=0?'positive':'negative')+'">'+roi.toFixed(1)+'%</div><div class="stat-label">ROI</div></div></div>';
+
+    /* Stop-loss / Stop-win alerts (open sessions only) */
+    let alertHtml='';
+    if(isOpen){
+      const sl=await S.get('stopLoss'),sw=await S.get('stopWin');
+      if(sl!=null&&sl>0&&playSum<=-sl){
+        alertHtml='<div class="settings-card" style="background:var(--red-dim);border:1px solid rgba(239,68,68,.3);text-align:center;margin:var(--space-md) 0;padding:var(--space-md)"><strong style="color:var(--red);font-size:15px">🚨 Stop-loss atteint</strong><div style="color:var(--red);font-size:13px;margin-top:4px">'+fC(playSum,c)+' (limite '+fC(-sl,c)+')</div><div class="text-muted text-sm" style="margin-top:4px">Pense à clôturer la session</div></div>';
+      } else if(sw!=null&&sw>0&&playSum>=sw){
+        alertHtml='<div class="settings-card" style="background:var(--accent-dim);border:1px solid rgba(16,185,129,.3);text-align:center;margin:var(--space-md) 0;padding:var(--space-md)"><strong style="color:var(--accent);font-size:15px">🎉 Stop-win atteint</strong><div style="color:var(--accent);font-size:13px;margin-top:4px">'+fC(playSum,c)+' (objectif '+fC(sw,c)+')</div><div class="text-muted text-sm" style="margin-top:4px">Encaisse pendant que tu es en avance</div></div>';
+      }
+    }
+
+    /* Per-session performance card (RTP, max bonus, multi avg) */
+    const sessStats=SS.plays(plays);
+    let perfHtml='';
+    if(sessStats.totalBet>0||sessStats.maxMulti>0){
+      let rows='';
+      if(sessStats.totalBet>0)rows+='<div class="rtp-row"><div class="rtp-machine">RTP</div><div class="rtp-values"><span class="stat-value-sm '+SS.rtpClass(sessStats.rtp)+'">'+sessStats.rtp.toFixed(1)+'%</span><span class="text-muted text-sm">'+fA(sessStats.totalBet,c)+' misés</span></div></div>';
+      if(sessStats.maxMulti>0)rows+='<div class="rtp-row"><div class="rtp-machine">🔥 Plus gros bonus</div><div class="rtp-values"><span class="stat-value-sm positive">x'+sessStats.maxMulti.toFixed(0)+'</span></div></div>';
+      if(sessStats.totalBonuses>=2&&sessStats.avgMulti>0)rows+='<div class="rtp-row"><div class="rtp-machine">Multi moyen</div><div class="rtp-values"><span class="stat-value-sm">x'+sessStats.avgMulti.toFixed(1)+'</span></div></div>';
+      if(rows)perfHtml='<div class="separator"></div><h3 class="card-title" style="font-size:14px;margin-bottom:var(--space-sm)">📊 Performance session</h3>'+rows;
+    }
+
+    M.open({title:'🎰 Session '+fD(s.date),
+      body:statsHtml+alertHtml+perfHtml+'<div class="separator"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)"><h3 class="card-title" style="margin:0">Machines ('+plays.length+')</h3><button class="btn btn-primary btn-sm" id="_ap">+ Machine</button></div><div>'+rows+'</div>'+(s.notes?'<div class="separator"></div><p class="text-muted text-sm">'+esc(s.notes)+'</p>':''),
+      footer:'<button class="btn btn-danger" style="flex:.5" id="_ds">🗑️</button>'+(isOpen?'<button class="btn btn-warn" style="flex:1" id="_co">💰 Clôturer</button>':'<button class="btn btn-outline" style="flex:1" id="_es">✏️</button>')+'<button class="btn btn-outline" style="flex:1" id="_cl">Fermer</button>'});
+    document.getElementById('_cl').onclick=()=>M.close();
+    document.getElementById('_ap').onclick=()=>{M.close();setTimeout(()=>this.fPlay(s.id),300)};
+    document.getElementById('_co')?.addEventListener('click',()=>{M.close();setTimeout(()=>this.cashout(s),300)});
+    document.getElementById('_es')?.addEventListener('click',()=>{M.close();setTimeout(()=>this.fSess(s),300)});
+    document.getElementById('_ds').onclick=async()=>{await M.waitClose();if(await M.confirm({title:'🗑️',message:'Supprimer session + machines ?',confirmText:'Supprimer',danger:true})){await db.slotPlays.where('sessionId').equals(id).delete();await db.slotSessions.delete(id);T.ok('Supprimée');await this.render();await App.uBR()}};
+    document.querySelectorAll('.play-row').forEach(r=>r.addEventListener('click',()=>{const p=plays.find(x=>x.id===+r.dataset.pid);if(p){M.close();setTimeout(()=>this.fPlay(s.id,p),300)}}));
+  },
+
+  async cashout(s){const c=await S.get('currency')||'EUR',sc=sy(c);M.open({title:'💰 Clôturer',body:'<p class="text-muted" style="margin-bottom:var(--space-md)">Dépôt : '+fA(s.deposit||0,c)+'</p><div class="form-group"><label>Cashout ('+sc+')</label><input type="number" class="input" id="_cov" placeholder="0" min="0" step="1" autofocus></div><div class="live-profit" id="_clp">—</div>',footer:'<button class="btn btn-outline" id="_clc" style="flex:1">Annuler</button><button class="btn btn-primary" id="_cls" style="flex:1">Clôturer</button>'});const $=i=>document.getElementById(i),cov=$('_cov'),lp=$('_clp');const up=()=>{const v=parseFloat(cov.value);if(isNaN(v)){lp.textContent='—';lp.className='live-profit';return}const p=v-(s.deposit||0),roi=s.deposit>0?((v-s.deposit)/s.deposit*100):0;lp.textContent=fC(p,c)+'  ·  ROI '+(roi>=0?'+':'')+roi.toFixed(0)+'%';lp.className='live-profit '+(p>=0?'positive':'negative')};cov.oninput=up;$('_clc').onclick=()=>{M.close();setTimeout(()=>this.detail(s.id),300)};$('_cls').onclick=async()=>{const v=parseFloat(cov.value);if(isNaN(v)){T.warn('Renseigne le cashout');return}await db.slotSessions.update(s.id,{cashout:v});T.ok('Clôturée');M.close();await this.render();await App.uBR();setTimeout(()=>this.detail(s.id),300)}},
+
+  async fSess(edit=null){const isE=!!edit,s=edit||{},c=await S.get('currency')||'EUR',sc=sy(c),dd=s.date||new Date().toISOString().split('T')[0];let body='<div class="form-group"><label>Date</label><input type="date" class="input" id="_d" value="'+dd+'"></div><div class="form-group"><label>Dépôt ('+sc+')</label><input type="number" class="input" id="_dep" value="'+(s.deposit||'')+'" placeholder="100" min="0" step="1"></div>';if(isE&&s.cashout!=null)body+='<div class="form-group"><label>Cashout ('+sc+')</label><input type="number" class="input" id="_coE" value="'+s.cashout+'" min="0" step="1"></div>';body+='<div class="form-group"><label>Notes</label><textarea class="input" id="_n" rows="2" placeholder="Notes...">'+esc(s.notes||'')+'</textarea></div>';M.open({title:isE?'✏️ Modifier session':'🎰 Nouvelle session',body,footer:'<button class="btn btn-outline" id="_ca" style="flex:1">Annuler</button><button class="btn btn-primary" id="_sv" style="flex:1">'+(isE?'Modifier':'Créer')+'</button>'});const $=i=>document.getElementById(i);$('_ca').onclick=()=>M.close();$('_sv').onclick=async()=>{const data={date:$('_d').value||new Date().toISOString().split('T')[0],deposit:parseFloat($('_dep').value)||0,notes:$('_n').value.trim()};if(isE&&$('_coE'))data.cashout=parseFloat($('_coE').value)||0;try{if(isE){await db.slotSessions.update(edit.id,data);T.ok('Modifiée');M.close();await this.render();await App.uBR()}else{data.cashout=null;const nid=await db.slotSessions.add(data);T.ok('Créée');M.close();await this.render();await App.uBR();setTimeout(()=>this.detail(nid),300)}}catch(e){T.err(e.message)}}},
+
+  /* ═══ PLAY FORM — multi-bonus + multi-bet batches ═══ */
+  async fPlay(sid,edit=null){
+    const isE=!!edit,p=edit||{},c=await S.get('currency')||'EUR',sc=sy(c);
+    const lib=await db.slotMachines.toArray(),hist=await db.slotPlays.toArray();
+    const allNames=[...new Set([...lib.map(m=>m.name),...hist.map(x=>x.machineName).filter(Boolean)])].sort();
+    const allProv=[...new Set([...lib.map(m=>m.provider).filter(Boolean),...hist.map(x=>x.provider).filter(Boolean)])].sort();
+    const bonuses=isE&&p.bonuses?[...p.bonuses]:[];
+    /* Spin batches: array of {spins, bet}. Backward compat: legacy fields → 1 batch. */
+    let batches;
+    if(isE&&Array.isArray(p.spinBatches)&&p.spinBatches.length){batches=p.spinBatches.map(b=>({...b}))}
+    else if(isE&&(p.totalSpins||p.betPerSpin)){batches=[{spins:p.totalSpins||0,bet:p.betPerSpin||0}]}
+    else batches=[{spins:0,bet:0}];
+
+    /* Compute weighted-average bet across batches (used for bonus multiplier display) */
+    const avgBet=()=>{const ts=batches.reduce((s,b)=>s+(b.spins||0),0);if(!ts)return 0;return batches.reduce((s,b)=>s+(b.spins||0)*(b.bet||0),0)/ts};
+
+    const renderBatches=()=>{
+      const cont=document.getElementById('_batchList');if(!cont)return;
+      cont.innerHTML=batches.map((b,i)=>{
+        const wager=(b.spins||0)*(b.bet||0);
+        return'<div class="batch-row" data-bi="'+i+'"><div class="form-row" style="margin-bottom:0"><div class="form-group" style="margin-bottom:0"><label style="font-size:11px">Spins</label><input type="number" class="input batch-spins" data-bi="'+i+'" value="'+(b.spins||'')+'" placeholder="100" min="0" inputmode="numeric"></div><div class="form-group" style="margin-bottom:0"><label style="font-size:11px">Mise / spin</label><input type="number" class="input batch-bet" data-bi="'+i+'" value="'+(b.bet||'')+'" placeholder="0.20" min="0" step="0.01" inputmode="decimal"></div>'+(batches.length>1?'<button type="button" class="bonus-remove batch-remove" data-bi="'+i+'" title="Supprimer">✕</button>':'')+'</div><div class="batch-summary" data-bi="'+i+'">'+(wager>0?'Misé : '+fA(wager,c)+'':'<span class="text-muted">—</span>')+'</div></div>';
+      }).join('');
+      cont.querySelectorAll('.batch-remove').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();const i=+btn.dataset.bi;batches.splice(i,1);renderBatches();updateTotals()}));
+      cont.querySelectorAll('.batch-spins,.batch-bet').forEach(inp=>inp.addEventListener('input',()=>{
+        const i=+inp.dataset.bi;
+        if(inp.classList.contains('batch-spins'))batches[i].spins=parseInt(inp.value)||0;
+        else batches[i].bet=parseFloat(inp.value)||0;
+        const sum=document.querySelector('.batch-summary[data-bi="'+i+'"]');
+        if(sum){const w=batches[i].spins*batches[i].bet;sum.innerHTML=w>0?'Misé : '+fA(w,c):'<span class="text-muted">—</span>'}
+        updateTotals();updateBonusMultis();
+      }));
+    };
+
+    const updateTotals=()=>{
+      const ts=batches.reduce((s,b)=>s+(b.spins||0),0);
+      const tw=batches.reduce((s,b)=>s+(b.spins||0)*(b.bet||0),0);
+      const el=document.getElementById('_batchTot');
+      if(el)el.innerHTML='<strong>'+ts+' spins</strong> · <strong>'+fA(tw,c)+'</strong> misé total';
+    };
+
+    const renderBonuses=()=>{
+      const container=document.getElementById('_bonusList');if(!container)return;
+      container.innerHTML=bonuses.map((b,i)=>'<div class="bonus-entry" data-bi="'+i+'"><button class="bonus-remove" data-bi="'+i+'">✕</button><div class="form-row"><div class="form-group"><label>Spins avant</label><input type="number" class="input bonus-spins" data-bi="'+i+'" value="'+(b.spinsToTrigger||'')+'" placeholder="150" min="0"></div><div class="form-group"><label>Gain bonus ('+sc+')</label><input type="number" class="input bonus-pay" data-bi="'+i+'" value="'+(b.payout||'')+'" placeholder="2.00" min="0" step="0.01"></div></div><div class="live-profit bonus-multi" data-bi="'+i+'" style="font-size:16px;padding:8px;margin:4px 0">—</div></div>').join('');
+      container.querySelectorAll('.bonus-remove').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();const i=+btn.dataset.bi;bonuses.splice(i,1);renderBonuses()}));
+      container.querySelectorAll('.bonus-pay,.bonus-spins').forEach(inp=>inp.addEventListener('input',()=>updateBonusMultis()));
+      updateBonusMultis();
+    };
+    const updateBonusMultis=()=>{
+      const bet=avgBet();
+      document.querySelectorAll('.bonus-multi').forEach(el=>{
+        const i=+el.dataset.bi,payInp=document.querySelector('.bonus-pay[data-bi="'+i+'"]');
+        const pay=parseFloat(payInp?.value)||0;
+        if(bet>0&&pay>0){const x=pay/bet;el.textContent='x'+x.toFixed(1)+(batches.length>1?' (mise moy.)':'');el.className='live-profit bonus-multi '+(x>=50?'positive':x>=20?'':'negative')}
+        else{el.textContent='—';el.className='live-profit bonus-multi'}
+        bonuses[i]={spinsToTrigger:parseInt(document.querySelector('.bonus-spins[data-bi="'+i+'"]')?.value)||0,payout:pay,multiplier:(bet>0&&pay>0)?Math.round(pay/bet*10)/10:0};
+      });
+    };
+
+    M.open({title:isE?'✏️ Modifier':'🎰 Ajouter machine',
+      body:'<div class="form-group"><label>Machine</label><input type="text" class="input" id="_m" value="'+esc(p.machineName||'')+'" placeholder="Sweet Bonanza" list="_dlM" autocomplete="off"><datalist id="_dlM">'+allNames.map(n=>'<option value="'+esc(n)+'">').join('')+'</datalist></div>'
+        +'<div class="form-group"><label>Fournisseur</label><input type="text" class="input" id="_pv" value="'+esc(p.provider||'')+'" placeholder="Pragmatic" list="_dlP" autocomplete="off"><datalist id="_dlP">'+allProv.map(n=>'<option value="'+esc(n)+'">').join('')+'</datalist></div>'
+        +'<div class="separator"></div>'
+        +'<div class="form-row"><div class="form-group"><label>Solde arrivée ('+sc+')</label><input type="number" class="input" id="_bi" value="'+(p.balanceIn!=null?p.balanceIn:'')+'" placeholder="100" min="0" step="0.01"></div><div class="form-group"><label>Solde départ ('+sc+')</label><input type="number" class="input" id="_bo" value="'+(p.balanceOut!=null?p.balanceOut:'')+'" placeholder="85" min="0" step="0.01"></div></div>'
+        +'<div class="live-profit" id="_pl">—</div>'
+        +'<div class="separator"></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm)"><label style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0">Paliers de mise</label><button type="button" class="btn btn-primary btn-sm" id="_addBatch">+ Palier</button></div>'
+        +'<p class="text-muted text-sm" style="margin-bottom:var(--space-sm)">Si tu as joué plusieurs mises sur la même machine (ex: 100 spins à 0.20€ puis 50 à 0.30€), ajoute un palier pour chaque.</p>'
+        +'<div id="_batchList"></div>'
+        +'<div id="_batchTot" class="text-muted text-sm" style="text-align:center;margin-top:8px;padding:8px;background:var(--bg-input);border-radius:var(--radius-sm)">—</div>'
+        +'<div class="separator"></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md)"><label style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0">Bonus obtenus</label><button class="btn btn-primary btn-sm" id="_addB">+ Bonus</button></div>'
+        +'<div id="_bonusList"></div>'
+        +'<div class="separator"></div>'
+        +'<div class="form-group"><label>Notes</label><textarea class="input" id="_pn" rows="2" placeholder="Notes...">'+esc(p.notes||'')+'</textarea></div>',
+      footer:(isE?'<button class="btn btn-danger" id="_pd" style="flex:.5">🗑️</button>':'')+'<button class="btn btn-outline" id="_pc" style="flex:1">Retour</button><button class="btn btn-primary" id="_ps" style="flex:1">'+(isE?'Modifier':'Ajouter')+'</button>'});
+
+    const $=i=>document.getElementById(i);
+    const bi=$('_bi'),bo=$('_bo'),pl=$('_pl');
+    const upl=()=>{const i=parseFloat(bi.value)||0,o=parseFloat(bo.value)||0;if(!i&&!o){pl.textContent='—';pl.className='live-profit';return}const d=o-i;pl.textContent=fC(d,c);pl.className='live-profit '+(d>=0?'positive':'negative')};
+    bi.oninput=upl;bo.oninput=upl;upl();
+
+    renderBatches();updateTotals();
+    $('_addBatch').addEventListener('click',()=>{batches.push({spins:0,bet:0});renderBatches();updateTotals()});
+
+    renderBonuses();
+    $('_addB').addEventListener('click',()=>{bonuses.push({spinsToTrigger:0,payout:0,multiplier:0});renderBonuses()});
+
+    /* Auto-fill provider when a saved machine is selected */
+    const provInp=$('_pv');
+    const machInp=$('_m');
+    /* Build name → provider map from library + history (library wins on conflict) */
+    const provMap={};
+    hist.forEach(x=>{if(x.machineName&&x.provider)provMap[x.machineName.toLowerCase()]=x.provider});
+    lib.forEach(m=>{if(m.name&&m.provider)provMap[m.name.toLowerCase()]=m.provider});
+    const tryAutofillProvider=()=>{
+      const n=machInp.value.trim().toLowerCase();
+      if(!n)return;
+      const found=provMap[n];
+      /* Only auto-fill if provider field is empty — never overwrite user input */
+      if(found&&!provInp.value.trim())provInp.value=found;
+    };
+    machInp.addEventListener('change',tryAutofillProvider);
+    machInp.addEventListener('blur',tryAutofillProvider);
+    /* Datalist option pick fires 'input' too — handle it without stomping on typing */
+    machInp.addEventListener('input',e=>{
+      const n=e.target.value.trim().toLowerCase();
+      if(provMap[n]&&!provInp.value.trim())provInp.value=provMap[n];
+    });
+
+    $('_pc').onclick=()=>{M.close();setTimeout(()=>this.detail(sid),300)};
+    if(isE)$('_pd')?.addEventListener('click',async()=>{await M.waitClose();if(await M.confirm({title:'🗑️',message:'Supprimer "'+esc(edit.machineName)+'" ?',confirmText:'Supprimer',danger:true})){await db.slotPlays.delete(edit.id);T.ok('Supprimée');await this.render();setTimeout(()=>this.detail(sid),300)}});
+
+    $('_ps').onclick=async()=>{
+      if(modalBusy)return;modalBusy=true;
+      const mn=$('_m').value.trim();if(!mn){T.warn('Nom requis');modalBusy=false;return}
+      // Sync bonuses from DOM
+      updateBonusMultis();
+      const cleanBatches=batches.filter(b=>(b.spins||0)>0||(b.bet||0)>0);
+      const totSpins=cleanBatches.reduce((s,b)=>s+(b.spins||0),0);
+      const totWager=cleanBatches.reduce((s,b)=>s+(b.spins||0)*(b.bet||0),0);
+      /* For legacy compat: betPerSpin = weighted-avg bet, totalSpins = sum */
+      const avgBet=totSpins>0?totWager/totSpins:0;
+      const data={sessionId:sid,machineName:mn,provider:$('_pv').value.trim(),
+        spinBatches:cleanBatches,
+        betPerSpin:Math.round(avgBet*10000)/10000,totalSpins:totSpins,
+        balanceIn:parseFloat(bi.value)||0,balanceOut:parseFloat(bo.value)||0,
+        bonuses:bonuses.filter(b=>b.payout>0||b.spinsToTrigger>0),notes:$('_pn').value.trim()};
+      const exists=await db.slotMachines.where('name').equalsIgnoreCase(mn).count();
+      if(!exists)await db.slotMachines.add({name:mn,provider:data.provider||''});
+      try{if(isE){await db.slotPlays.update(edit.id,data);T.ok('Modifiée')}else{await db.slotPlays.add(data);T.ok('Ajoutée')}M.close();await this.render();setTimeout(()=>this.detail(sid),300)}catch(e){T.err(e.message);modalBusy=false}
+    };
+  }
+};
+
+/* ═══ SETTINGS ═══ */
+const SE={
+  f:{sB:{k:'bankrollInitial',t:'number'},sC:{k:'currency',t:'string'},sSL:{k:'stopLoss',t:'number'},sSW:{k:'stopWin',t:'number'}},
+  async init(){await this.load();this.bind();this.act();await this.rML()},
+  async load(){for(const[id,{k}]of Object.entries(this.f)){const el=document.getElementById(id);if(!el)continue;const v=await S.get(k);if(v!=null)el.value=v}},
+  bind(){for(const[id,{k,t}]of Object.entries(this.f)){const el=document.getElementById(id);if(!el)continue;el.addEventListener('change',async()=>{let v=el.value;if(t==='number')v=v===''?null:parseFloat(v);await S.set(k,v);await App.uBR();T.ok('Sauvegardé')})}},
+  async rML(){const ms=await db.slotMachines.toArray(),el=document.getElementById('machLib');if(!el)return;if(!ms.length){el.innerHTML='<p class="text-muted text-sm">Aucune machine</p>';return}el.innerHTML=ms.map(m=>'<div class="rtp-row" style="padding:8px 0"><div class="rtp-machine">'+esc(m.name)+(m.provider?' <span class="text-muted text-sm">'+esc(m.provider)+'</span>':'')+'</div><button class="btn btn-danger btn-sm" data-mid="'+m.id+'">✕</button></div>').join('');el.querySelectorAll('[data-mid]').forEach(b=>b.addEventListener('click',async()=>{await db.slotMachines.delete(+b.dataset.mid);T.ok('Supprimée');await this.rML()}))},
+  act(){
+    document.getElementById('bAddMach')?.addEventListener('click',async()=>{M.open({title:'🎰 Nouvelle machine',body:'<div class="form-group"><label>Nom</label><input type="text" class="input" id="_amn" placeholder="Sweet Bonanza"></div><div class="form-group"><label>Fournisseur</label><input type="text" class="input" id="_amp" placeholder="Pragmatic Play"></div>',footer:'<button class="btn btn-outline" id="_amc" style="flex:1">Annuler</button><button class="btn btn-primary" id="_ams" style="flex:1">Ajouter</button>'});document.getElementById('_amc').onclick=()=>M.close();document.getElementById('_ams').onclick=async()=>{const n=document.getElementById('_amn').value.trim();if(!n){T.warn('Nom requis');return}await db.slotMachines.add({name:n,provider:document.getElementById('_amp').value.trim()});T.ok('Ajoutée');M.close();await this.rML()}});
+    document.getElementById('bExp')?.addEventListener('click',async()=>{try{DIO.dl(await DIO.expJSON(),'casino_backup_'+Date.now()+'.json','application/json');T.ok('Exporté')}catch(e){T.err('Erreur')}});
+    const fi=document.getElementById('fImp');document.getElementById('bImp')?.addEventListener('click',()=>fi.click());
+    fi?.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;if(!await M.confirm({title:'📥',message:'Remplacer toutes les données ?',confirmText:'Importer',danger:true})){fi.value='';return}try{await DIO.impJSON(await f.text());await this.load();await App.uBR();await SL.render();T.ok('Importé')}catch(e){T.err('Invalide')}fi.value=''});
+    document.getElementById('bRst')?.addEventListener('click',async()=>{if(!await M.confirm({title:'🗑️',message:'Tout supprimer ?',confirmText:'Supprimer',danger:true}))return;await DIO.reset();for(const id of Object.keys(this.f)){const el=document.getElementById(id);if(el)el.value=''}await App.uBR();await SL.render();await this.rML();T.ok('Réinitialisé')});
+  }
+};
+
+/* ═══ BLACKJACK MODULE ═══ */
+const BJS={
+  compute(hands){
+    let W=0,L=0,P=0,BJ=0,SR=0,mainProfit=0,maxW=0,maxL=0,curW=0,curL=0,betSum=0,goodMoves=0,checkable=0;
+    let ppB=0,ppP=0,ppC=0,ppH=0,tpB=0,tpP=0,tpC=0,tpH=0;
+    hands.forEach(h=>{
+      mainProfit+=(h.payout||0)-(h.bet||0);
+      betSum+=(h.bet||0);
+      if(h.result==='W'){W++;curW++;curL=0;maxW=Math.max(maxW,curW)}
+      else if(h.result==='BJ'){BJ++;W++;curW++;curL=0;maxW=Math.max(maxW,curW)}
+      else if(h.result==='L'){L++;curL++;curW=0;maxL=Math.max(maxL,curL)}
+      else if(h.result==='P'){P++}
+      else if(h.result==='SR'){SR++;curL++;curW=0;maxL=Math.max(maxL,curL)}
+      if(h.recommended&&h.action&&h.recommended!=='BLACKJACK'&&h.recommended!=='BUST'){
+        checkable++;if(h.recommended===h.action)goodMoves++;
+      }
+      if(h.pp){ppC++;ppB+=h.pp.bet||0;ppP+=h.pp.payout||0;if((h.pp.payout||0)>0)ppH++}
+      if(h.tp){tpC++;tpB+=h.tp.bet||0;tpP+=h.tp.payout||0;if((h.tp.payout||0)>0)tpH++}
+    });
+    const total=hands.length;
+    const dec=W+L+SR;
+    const sideNet=(ppP-ppB)+(tpP-tpB);
+    return{
+      total,W,L,P,BJ,SR,
+      profit:mainProfit+sideNet,mainProfit,sideNet,
+      betSum,
+      winrate:dec>0?(W/dec*100):0,
+      bjRate:total>0?(BJ/total*100):0,
+      pushRate:total>0?(P/total*100):0,
+      maxW,maxL,curStreak:curW>0?curW:-curL,
+      adherence:checkable>0?(goodMoves/checkable*100):null,
+      adherenceCount:goodMoves+'/'+checkable,
+      avgBet:total>0?betSum/total:0,
+      pp:{count:ppC,bet:ppB,payout:ppP,net:ppP-ppB,hits:ppH,hitRate:ppC>0?(ppH/ppC*100):0,rtp:ppB>0?(ppP/ppB*100):0},
+      tp:{count:tpC,bet:tpB,payout:tpP,net:tpP-tpB,hits:tpH,hitRate:tpC>0?(tpH/tpC*100):0,rtp:tpB>0?(tpP/tpB*100):0}
+    };
+  }
+};
+const BJ={
+  st:{p:[],d:[],sessionId:null,lastBet:null,currentBet:null,explicitAction:null,afterDouble:false,ppMult:0,tpMult:0,ppBet:null,tpBet:null,
+      /* SPLIT state */
+      splitMode:false, /* true when player has split */
+      splitHands:[],   /* array of {cards:[], action:null, doubled:false, isAces:false} */
+      splitIdx:0,      /* index of currently-playing sub-hand */
+      splitDealer:[]   /* dealer cards (separate from this.st.d which is used pre-split) */
+     },
+  _target:'p',
+
+  async init(){await this.render()},
+
+  /* ── Helpers ── */
+  _resetHand(){this.st.p=[];this.st.d=[];this.st.explicitAction=null;this.st.afterDouble=false;this.st.ppMult=0;this.st.tpMult=0;this.st.ppBet=null;this.st.tpBet=null;this.st.splitMode=false;this.st.splitHands=[];this.st.splitIdx=0;this.st.splitDealer=[];this._target='p'},
+
+  /* Helper: returns the currently-active sub-hand object (in split mode), or null */
+  _curSplitHand(){return this.st.splitMode?this.st.splitHands[this.st.splitIdx]:null},
+  /* Helper: are all split sub-hands done playing? */
+  _allSplitsDone(){return this.st.splitMode&&this.st.splitHands.every(h=>h.done)},
+
+  _computeResult(sess){
+    /* SPLIT MODE: compute result for each sub-hand */
+    if(this.st.splitMode){
+      if(!this._allSplitsDone())return null;
+      if(this.st.splitDealer.length<2)return null;
+      const dh=handTotal(this.st.splitDealer);
+      const dealerMustHit=dh.total<17||(sess?.h17&&dh.total===17&&dh.soft);
+      if(dealerMustHit)return null;
+      /* Compute result for each sub-hand independently. BJ flag = false after split per casino rules */
+      return this.st.splitHands.map(sh=>{
+        const ph=handTotal(sh.cards);
+        if(ph.isBust)return 'L';
+        if(dh.isBust)return 'W';
+        if(ph.total>dh.total)return 'W';
+        if(ph.total===dh.total)return 'P';
+        return 'L';
+      });
+    }
+    /* NORMAL MODE */
+    if(this.st.p.length<2||this.st.d.length<1)return null;
+    const ph=handTotal(this.st.p),dh=handTotal(this.st.d);
+    if(ph.isBust)return 'L';
+    if(this.st.explicitAction==='SURRENDER')return 'SR';
+    /* Player BJ — peek-rule resolution. Dealer never plays out a full hand
+       once player BJ is confirmed and dealer is verified non-BJ. */
+    if(ph.isBJ){
+      if(this.st.d.length===1){
+        if(this.st.d[0]!=='A'&&this.st.d[0]!=='T')return 'BJ';
+        return null; /* need dealer 2nd card to peek */
+      }
+      return dh.isBJ?'P':'BJ';
+    }
+    if(this.st.d.length===1)return null;
+    if(dh.isBust)return 'W';
+    /* Dealer must hit on <17, also on soft 17 if H17 rule */
+    const dealerMustHit=dh.total<17||(sess?.h17&&dh.total===17&&dh.soft);
+    if(dealerMustHit)return null;
+    if(dh.isBJ)return 'L';
+    if(ph.total>dh.total)return 'W';
+    if(ph.total===dh.total)return 'P';
+    return 'L';
+  },
+
+  _payoutFor(result,bet,action){
+    const mult=action==='DOUBLE'?2:1;
+    if(result==='BJ')return{actualBet:bet,payout:bet+bet*1.5};
+    if(result==='W')return{actualBet:bet*mult,payout:bet*mult*2};
+    if(result==='P')return{actualBet:bet*mult,payout:bet*mult};
+    if(result==='SR')return{actualBet:bet,payout:bet*0.5};
+    return{actualBet:bet*mult,payout:0};
+  },
+
+  _inferAction(){
+    if(this.st.explicitAction)return this.st.explicitAction;
+    if(this.st.p.length>2)return 'HIT';
+    return 'STAND';
+  },
+
+  /* In-place bet update — does NOT re-render the whole view, preserves keyboard focus */
+  _setBetUI(v){
+    this.st.currentBet=v;
+    const inp=document.getElementById('bjBetInp');
+    if(inp)inp.value=v;
+    this._refreshVerdictPnL();
+  },
+  /* Update the verdict's P/L line if a result is currently shown */
+  async _refreshVerdictPnL(){
+    if(!this.st.sessionId)return;
+    const sess=await db.bjSessions.get(this.st.sessionId);
+    const result=this._computeResult(sess);
+    if(!result)return;
+    /* Split mode has multiple result rows — easier to re-render */
+    if(this.st.splitMode&&Array.isArray(result)){this.render();return}
+    const detail=document.querySelector('#viewBlackjack .bj-verdict .bj-verdict-detail');
+    if(!detail)return;
+    const pay=this._payoutFor(result,this.st.currentBet||0,this._inferAction());
+    const net=pay.payout-pay.actualBet;
+    detail.textContent=(net>=0?'+':'')+net.toFixed(2)+' (mise '+pay.actualBet.toFixed(2)+')';
+  },
+
+  _canAct(act){
+    if(!this.st.sessionId)return false;
+    /* SPLIT MODE: actions apply to current sub-hand */
+    if(this.st.splitMode){
+      const cur=this._curSplitHand();
+      if(!cur||cur.done)return false;
+      if(cur.cards.length<2)return false; /* need 2nd card distributed first */
+      if(act==='SPLIT')return false; /* re-split not supported */
+      if(act==='SURRENDER')return false; /* not allowed after split */
+      if(act==='DOUBLE')return cur.cards.length===2&&!cur.isAces; /* DAS only on 2-card sub-hand, not aces */
+      return true; /* STAND always allowed */
+    }
+    /* NORMAL MODE */
+    if(this.st.explicitAction)return false;
+    if(this.st.p.length<2||this.st.d.length<1)return false;
+    const ph=handTotal(this.st.p);
+    if(ph.isBJ)return false; /* BJ → no actions, just log */
+    if(act==='DOUBLE')return this.st.p.length===2;
+    if(act==='SPLIT')return this.st.p.length===2&&ph.isPair;
+    return true;
+  },
+
+  /* ── Render ── */
+  async render(){
+    const el=document.getElementById('viewBlackjack'),c=await S.get('currency')||'EUR',sc=sy(c);
+    const allSess=await db.bjSessions.toArray();
+    const open=allSess.find(s=>s.cashout==null);
+    this.st.sessionId=open?open.id:null;
+    if(this.st.currentBet==null&&open)this.st.currentBet=this.st.lastBet??open.defaultBet??5;
+    if(this.st.ppBet==null&&open)this.st.ppBet=open.ppDefault||0;
+    if(this.st.tpBet==null&&open)this.st.tpBet=open.tpDefault||0;
+
+    let html='<div class="view-inner"><h2 class="view-title">Blackjack</h2>';
+
+    /* === ADVISOR-ONLY MODE (no session) === */
+    if(!open){
+      html+=this._renderHandsCard();
+      html+=this._renderVerdictCard(null);
+      html+=this._renderCardGrid();
+      html+='<div class="settings-card" style="display:flex;gap:8px"><button class="btn btn-outline" id="bjUndo" style="flex:1">↶ Annuler</button><button class="btn btn-outline" id="bjReset" style="flex:1">Effacer</button></div>';
+      html+='<div class="settings-card" style="text-align:center"><p class="text-muted text-sm" style="margin-bottom:var(--space-md)">Mode conseil seul.<br>Démarre une session pour logger tes mains.</p><button class="btn btn-primary" id="bjStart" style="width:100%">🎯 Démarrer une session</button></div>';
+      const past=await db.bjSessions.orderBy('date').reverse().limit(10).toArray();
+      const closed=past.filter(s=>s.cashout!=null);
+      if(closed.length){html+='<div class="settings-card"><h3 class="card-title">📅 Sessions passées</h3>';for(const s of closed){const sh=await db.bjHands.where('sessionId').equals(s.id).toArray();const sst=BJS.compute(sh);const pr=(s.cashout||0)-(s.deposit||0);const wrTag=sh.length>0?'<span class="text-muted text-sm" style="margin-left:6px"> · '+sst.winrate.toFixed(0)+'% WR</span>':'';html+='<div class="rtp-row" data-bjsess="'+s.id+'" style="cursor:pointer"><div class="rtp-machine">'+fD(s.date)+'<span class="text-muted text-sm"> · '+sh.length+' mains</span>'+wrTag+'</div><div class="rtp-values"><span class="stat-value-sm '+(pr>=0?'positive':'negative')+'">'+fC(pr,c)+'</span></div></div>'}html+='</div>'}
+      html+='</div>';
+      el.innerHTML=html;this._bind();return;
+    }
+
+    /* === ACTIVE SESSION === */
+    /* Get hands first so we can show hand counter + bet strip */
+    const handsAll=await db.bjHands.where('sessionId').equals(open.id).toArray();
+    handsAll.sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const handNum=handsAll.length+1;
+    const recentBets=handsAll.slice(-5).map(h=>h.bet);
+
+    /* Bet row — manual entry first, big & clear */
+    const bet=this.st.currentBet??5,def=open.defaultBet??5;
+    /* Absolute chip values derived from defaultBet */
+    const chips=[def*0.5,def,def*2,def*5,def*10].map(v=>{
+      if(v<1)return Math.round(v*10)/10;
+      if(v<10)return Math.round(v*2)/2;
+      if(v<100)return Math.round(v/5)*5;
+      return Math.round(v/25)*25;
+    });
+    html+='<div class="settings-card" style="padding:12px">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><label style="font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:.6px;margin:0">💰 Mise main #'+handNum+'</label>';
+    if(recentBets.length){
+      html+='<div style="display:flex;gap:3px;align-items:center" title="Mises récentes"><span class="text-muted text-sm" style="font-size:10px">Précédentes :</span>';
+      html+=recentBets.map(b=>'<span style="font-size:10px;font-weight:700;background:var(--bg-input);padding:2px 6px;border-radius:4px;color:var(--text-muted);font-family:var(--font-mono)">'+b+'</span>').join('');
+      html+='</div>';
+    }
+    html+='</div>';
+    html+='<div style="display:flex;gap:6px;align-items:stretch">';
+    html+='<button id="bjBetDec" class="btn btn-outline" style="width:56px;flex:0 0 56px;padding:0;font-weight:700;font-size:24px">−</button>';
+    html+='<input type="number" id="bjBetInp" class="input" value="'+bet+'" min="0" step="any" inputmode="decimal" style="flex:1 1 auto;min-width:0;text-align:center;font-size:24px;font-weight:800;padding:10px 4px;height:auto;font-family:var(--font-mono)">';
+    html+='<button id="bjBetInc" class="btn btn-outline" style="width:56px;flex:0 0 56px;padding:0;font-weight:700;font-size:24px">+</button>';
+    html+='</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat('+chips.length+',1fr);gap:4px;margin-top:8px">'+chips.map(v=>'<button class="btn btn-outline" data-betset="'+v+'" style="padding:8px 0;font-size:13px;font-weight:700">'+v+'<span class="text-muted" style="font-weight:400">'+sc+'</span></button>').join('')+'</div></div>';
+
+    /* Hands display */
+    html+=this._renderHandsCard();
+
+    /* Verdict / result */
+    const result=this._computeResult(open);
+    html+=this._renderVerdictCard(result,open);
+
+    /* Card grid */
+    html+=this._renderCardGrid();
+
+    /* Action buttons (decision phase) */
+    html+='<div class="settings-card" style="padding:8px">';
+    html+='<div style="display:grid;grid-template-columns:repeat('+(open.surrender?4:3)+',1fr);gap:6px">';
+    html+='<button class="btn btn-outline bj-action-btn" id="bjActStand"'+(this._canAct('STAND')?'':' disabled')+'>🛑 STAND</button>';
+    html+='<button class="btn btn-outline bj-action-btn" id="bjActDouble"'+(this._canAct('DOUBLE')?'':' disabled')+'>2× DOUBLE</button>';
+    html+='<button class="btn btn-outline bj-action-btn" id="bjActSplit"'+(this._canAct('SPLIT')?'':' disabled')+'>✂ SPLIT</button>';
+    if(open.surrender)html+='<button class="btn btn-outline bj-action-btn" id="bjActSR"'+(this._canAct('SR')?'':' disabled')+'>↶ SR</button>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:6px;margin-top:6px"><button class="btn btn-outline" id="bjUndo" style="flex:1">↶ Annuler</button><button class="btn btn-outline" id="bjReset" style="flex:1">Effacer</button></div>';
+    html+='</div>';
+
+    /* Side bets — always shown, with per-hand editable bet amount.
+       bet=0 → not placed (not logged). bet>0+mult=0 → placed and lost. bet>0+mult>0 → placed and won. */
+    {
+      const inpStyle='width:64px;flex:0 0 64px;text-align:center;padding:6px;font-size:13px;font-weight:700;font-family:var(--font-mono);height:auto';
+      const togsStyle=b=>b>0?'':'opacity:.4;pointer-events:none';
+      const ppB=this.st.ppBet||0,tpB=this.st.tpBet||0;
+      html+='<div class="settings-card" style="padding:10px">';
+      /* PP row */
+      html+='<div class="bj-side-row" style="margin-bottom:8px"><span style="font-size:12px;font-weight:700;flex-shrink:0;width:54px">🎴 PP</span>';
+      html+='<input type="number" class="input" id="ppBetInp" value="'+(ppB||'')+'" placeholder="'+(open.ppDefault||0)+'" min="0" step="0.5" inputmode="decimal" style="'+inpStyle+'">';
+      html+='<span style="font-size:11px;color:var(--text-muted);margin:0 2px 0 -2px">'+sc+'</span>';
+      html+='<div class="bj-side-toggles" id="ppTogs" style="'+togsStyle(ppB)+'">';
+      html+='<div class="bj-side-tog'+(ppB>0&&this.st.ppMult===0?' on off-default':'')+'" data-ppset="0">❌</div>';
+      html+=PP_OPTS.map(o=>'<div class="bj-side-tog'+(ppB>0&&this.st.ppMult===o.m?' on':'')+'" data-ppset="'+o.m+'">'+o.m+'×</div>').join('');
+      html+='</div></div>';
+      /* 21+3 row */
+      html+='<div class="bj-side-row"><span style="font-size:12px;font-weight:700;flex-shrink:0;width:54px">🃏 21+3</span>';
+      html+='<input type="number" class="input" id="tpBetInp" value="'+(tpB||'')+'" placeholder="'+(open.tpDefault||0)+'" min="0" step="0.5" inputmode="decimal" style="'+inpStyle+'">';
+      html+='<span style="font-size:11px;color:var(--text-muted);margin:0 2px 0 -2px">'+sc+'</span>';
+      html+='<div class="bj-side-toggles" id="tpTogs" style="'+togsStyle(tpB)+'">';
+      html+='<div class="bj-side-tog'+(tpB>0&&this.st.tpMult===0?' on off-default':'')+'" data-tpset="0">❌</div>';
+      html+=TP_OPTS.map(o=>'<div class="bj-side-tog'+(tpB>0&&this.st.tpMult===o.m?' on':'')+'" data-tpset="'+o.m+'">'+o.m+'×</div>').join('');
+      html+='</div></div>';
+      html+='</div>';
+    }
+
+    /* LOG button */
+    const canLog=result!==null;
+    const logLabel=canLog?(this.st.splitMode?'✓ ENREGISTRER LES 2 MAINS':'✓ ENREGISTRER LA MAIN'):'⏳ Termine la main…';
+    html+='<button class="btn btn-primary" id="bjLog"'+(canLog?'':' disabled')+' style="width:100%;margin-bottom:var(--space-md);padding:16px;font-size:16px;font-weight:800;letter-spacing:.5px">'+logLabel+'</button>';
+
+    /* Session stats — reuse handsAll loaded above, sort desc for display */
+    const hands=[...handsAll].sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const st=BJS.compute(hands);
+    const sl=await S.get('stopLoss'),sw=await S.get('stopWin');
+    let alertHtml='';
+    if(sl!=null&&sl>0&&st.profit<=-sl)alertHtml='<div class="settings-card" style="background:var(--red-dim);border:1px solid rgba(239,68,68,.3);text-align:center;padding:var(--space-md)"><strong style="color:var(--red);font-size:14px">🚨 Stop-loss atteint</strong></div>';
+    else if(sw!=null&&sw>0&&st.profit>=sw)alertHtml='<div class="settings-card" style="background:var(--accent-dim);border:1px solid rgba(16,185,129,.3);text-align:center;padding:var(--space-md)"><strong style="color:var(--accent);font-size:14px">🎉 Stop-win atteint</strong></div>';
+    const streakBadge=st.curStreak>0?'<span class="bj-streak W">🔥 '+st.curStreak+'W</span>':st.curStreak<0?'<span class="bj-streak L">❄️ '+(-st.curStreak)+'L</span>':'';
+    html+=alertHtml+'<div class="settings-card"><h3 class="card-title">🎯 Session '+streakBadge+'</h3>';
+    html+='<div class="stat-grid"><div class="stat-box"><div class="stat-value '+(st.profit>=0?'positive':'negative')+'">'+fC(st.profit,c)+'</div><div class="stat-label">P/L</div></div><div class="stat-box"><div class="stat-value">'+st.total+'</div><div class="stat-label">Mains</div></div><div class="stat-box"><div class="stat-value">'+st.winrate.toFixed(0)+'%</div><div class="stat-label">Winrate</div></div><div class="stat-box"><div class="stat-value">'+st.maxW+'/'+st.maxL+'</div><div class="stat-label">Max W/L</div></div></div>';
+    let rows='';
+    if(st.bjRate>0)rows+='<div class="rtp-row"><div class="rtp-machine">Blackjacks</div><div class="rtp-values"><span class="stat-value-sm positive">'+st.BJ+' ('+st.bjRate.toFixed(1)+'%)</span></div></div>';
+    if(st.P>0)rows+='<div class="rtp-row"><div class="rtp-machine">Push</div><div class="rtp-values"><span class="stat-value-sm">'+st.P+' ('+st.pushRate.toFixed(1)+'%)</span></div></div>';
+    if(st.adherence!=null)rows+='<div class="rtp-row"><div class="rtp-machine">📚 Basic strategy</div><div class="rtp-values"><span class="stat-value-sm '+(st.adherence>=90?'positive':st.adherence>=75?'':'negative')+'">'+st.adherence.toFixed(0)+'%</span><span class="text-muted text-sm">'+st.adherenceCount+'</span></div></div>';
+    if(rows)html+=rows;
+    html+='<div style="display:flex;gap:var(--space-sm);margin-top:var(--space-md)"><button class="btn btn-outline" style="flex:1" id="bjEditSess">⚙️</button><button class="btn btn-warn" style="flex:1" id="bjCloseSess">💰 Clôturer</button></div></div>';
+
+    /* Side bet stats */
+    if(st.pp.count>0||st.tp.count>0){
+      html+='<div class="settings-card"><h3 class="card-title">🎲 Side bets</h3>';
+      const sideRow=(label,o,emoji)=>'<div class="rtp-row"><div class="rtp-machine">'+emoji+' '+label+'<span class="text-muted text-sm"> · '+o.hits+'/'+o.count+'</span></div><div class="rtp-values"><span class="stat-value-sm '+SS.rtpClass(o.rtp)+'">RTP '+o.rtp.toFixed(0)+'%</span><span class="stat-value-sm '+(o.net>=0?'positive':'negative')+'">'+fC(o.net,c)+'</span></div></div>';
+      if(st.pp.count>0)html+=sideRow('Perfect Pairs',st.pp,'🎴');
+      if(st.tp.count>0)html+=sideRow('21+3',st.tp,'🃏');
+      html+='</div>';
+    }
+
+    /* Recent hands */
+    if(hands.length){
+      html+='<div class="settings-card"><h3 class="card-title">Dernières mains</h3>';
+      html+=hands.slice(0,10).map(h=>{
+        const cls=h.result==='BJ'?'BJ':h.result==='W'?'W':h.result==='L'?'L':h.result==='SR'?'SR':'P';
+        const lbl=h.result==='SR'?'SR':h.result;
+        const wrong=h.recommended&&h.action&&h.recommended!==h.action&&h.recommended!=='BLACKJACK'&&h.recommended!=='BUST';
+        const cards=h.playerCards||'',hd=handTotal(cards.split(''));
+        const totalProfit=(h.payout||0)-(h.bet||0)+(h.pp?(h.pp.payout||0)-(h.pp.bet||0):0)+(h.tp?(h.tp.payout||0)-(h.tp.bet||0):0);
+        return'<div class="bj-hand-row"><span class="bj-result '+cls+'">'+lbl+'</span><span style="flex:1;margin:0 8px;font-family:var(--font-mono);font-size:12px">'+esc(cards)+(hd.total?' ('+hd.total+')':'')+' v '+(h.dealerCard||'?')+'</span><span class="text-muted text-sm" style="margin-right:8px;font-family:var(--font-mono);font-size:11px">'+(h.bet||0)+sy(c)+'</span>'+(wrong?'<span class="bj-mistake" style="margin-right:6px">⚠</span>':'')+'<span class="stat-value-sm '+(totalProfit>=0?'positive':'negative')+'">'+fC(totalProfit,c)+'</span></div>';
+      }).join('');
+      html+='</div>';
+    }
+
+    /* Past sessions */
+    const past=await db.bjSessions.orderBy('date').reverse().limit(10).toArray();
+    const closed=past.filter(s=>s.cashout!=null);
+    if(closed.length){html+='<div class="settings-card"><h3 class="card-title">📅 Sessions passées</h3>';for(const s of closed){const sh=await db.bjHands.where('sessionId').equals(s.id).toArray();const sst=BJS.compute(sh);const pr=(s.cashout||0)-(s.deposit||0);const wrTag=sh.length>0?'<span class="text-muted text-sm" style="margin-left:6px"> · '+sst.winrate.toFixed(0)+'% WR</span>':'';html+='<div class="rtp-row" data-bjsess="'+s.id+'" style="cursor:pointer"><div class="rtp-machine">'+fD(s.date)+'<span class="text-muted text-sm"> · '+sh.length+' mains</span>'+wrTag+'</div><div class="rtp-values"><span class="stat-value-sm '+(pr>=0?'positive':'negative')+'">'+fC(pr,c)+'</span></div></div>'}html+='</div>'}
+
+    html+='</div>';
+    el.innerHTML=html;
+    this._bind();
+  },
+
+  _renderHandsCard(){
+    /* SPLIT MODE: render sub-hands stacked + dealer separately */
+    if(this.st.splitMode){
+      const dealerActive=this._target==='d';
+      let html='<div class="settings-card" style="padding:10px">';
+      html+='<div class="bj-split-banner">✂ Split — main '+(this.st.splitIdx+1)+'/'+this.st.splitHands.length+'</div>';
+      html+='<div class="bj-split-hands">';
+      this.st.splitHands.forEach((sh,i)=>{
+        const ht=handTotal(sh.cards);
+        const isCur=!sh.done&&i===this.st.splitIdx&&this._target==='p';
+        let lbl;
+        if(sh.done){
+          if(ht.isBust)lbl='BUST '+ht.total;
+          else if(sh.action==='DOUBLE')lbl=ht.total+' · 2×';
+          else lbl=ht.total+(ht.soft?' soft':'')+(sh.action==='STAND'?' · stand':'');
+        } else {
+          lbl=sh.cards.length<2?'En cours...':ht.total+(ht.soft?' soft':'');
+        }
+        html+='<div class="bj-hand-zone'+(isCur?' active':'')+(sh.done?' done':'')+'" data-splitidx="'+i+'"><div class="bj-hand-label">🎯 Main '+(i+1)+(isCur?' ◀':'')+(sh.done?' ✓':'')+'</div><div class="bj-hand-display">'+sh.cards.map(c=>'<span class="bj-card-chip">'+c+'</span>').join('')+(sh.cards.length<2&&isCur?'<span class="placeholder">Tape la carte</span>':'')+'</div><div class="bj-hand-total '+(ht.isBust?'negative':'')+'">'+lbl+'</div></div>';
+      });
+      html+='</div>';
+      /* Dealer */
+      const dh=handTotal(this.st.splitDealer);
+      html+='<div class="bj-hand-zone'+(dealerActive?' active':'')+'" data-target="d" style="margin-top:8px"><div class="bj-hand-label">🃏 Croupier</div><div class="bj-hand-display">'+(this.st.splitDealer.length?this.st.splitDealer.map(c=>'<span class="bj-card-chip">'+c+'</span>').join(''):'<span class="placeholder">Up card</span>')+'</div>';
+      if(this.st.splitDealer.length)html+='<div class="bj-hand-total '+(dh.isBust?'positive':'')+'">'+(dh.isBust?'BUST '+dh.total:dh.total+(this.st.splitDealer.length===1?' (up)':''))+'</div>';
+      html+='</div></div>';
+      return html;
+    }
+    /* NORMAL MODE */
+    const ph=handTotal(this.st.p),dh=handTotal(this.st.d);
+    const playerActive=this._target==='p',dealerActive=this._target==='d';
+    let html='<div class="settings-card" style="padding:10px"><div class="bj-hands-row">';
+    html+='<div class="bj-hand-zone'+(playerActive?' active':'')+'" data-target="p"><div class="bj-hand-label">🎯 Toi</div><div class="bj-hand-display">'+(this.st.p.length?this.st.p.map(c=>'<span class="bj-card-chip">'+c+'</span>').join(''):'<span class="placeholder">Tape tes cartes</span>')+'</div>';
+    if(this.st.p.length)html+='<div class="bj-hand-total '+(ph.isBust?'negative':ph.isBJ?'positive':'')+'">'+(ph.isBust?'BUST '+ph.total:ph.isBJ?'BJ ✨':ph.total+(ph.soft?' soft':''))+'</div>';
+    html+='</div>';
+    html+='<div class="bj-hand-zone'+(dealerActive?' active':'')+'" data-target="d"><div class="bj-hand-label">🃏 Croupier</div><div class="bj-hand-display">'+(this.st.d.length?this.st.d.map(c=>'<span class="bj-card-chip">'+c+'</span>').join(''):'<span class="placeholder">Up card</span>')+'</div>';
+    if(this.st.d.length)html+='<div class="bj-hand-total '+(dh.isBust?'positive':'')+'">'+(dh.isBust?'BUST '+dh.total:dh.total+(this.st.d.length===1?' (up)':''))+'</div>';
+    html+='</div></div></div>';
+    return html;
+  },
+
+  _renderVerdictCard(result,sess){
+    /* SPLIT MODE FINAL RESULT */
+    if(this.st.splitMode&&Array.isArray(result)){
+      const bet=this.st.currentBet||0;
+      let totalNet=0;
+      const rows=result.map((r,i)=>{
+        const sh=this.st.splitHands[i];
+        const action=sh.action||'STAND';
+        const pay=this._payoutFor(r,bet,action);
+        const net=pay.payout-pay.actualBet;
+        totalNet+=net;
+        const rl={W:'GAGNÉ',L:'PERDU',P:'PUSH'}[r]||r;
+        const rc=r==='W'?'var(--accent)':r==='P'?'var(--text-muted)':'var(--red)';
+        return'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;font-weight:600">Main '+(i+1)+(action==='DOUBLE'?' (2×)':'')+'</span><span style="font-size:14px;font-weight:700;color:'+rc+'">'+rl+'</span><span class="stat-value-sm '+(net>=0?'positive':'negative')+'">'+(net>=0?'+':'')+net.toFixed(2)+'</span></div>';
+      }).join('');
+      const totCol=totalNet>=0?'var(--accent)':'var(--red)';
+      return'<div class="settings-card bj-verdict" style="color:'+totCol+';background:color-mix(in srgb,'+totCol+' 10%,transparent);border:2px solid currentColor;margin-bottom:var(--space-md);padding:var(--space-md)"><div style="text-align:center;font-size:11px;text-transform:uppercase;color:var(--text-muted);font-weight:700;letter-spacing:.6px;margin-bottom:8px">Résultats split</div>'+rows+'<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:4px"><span style="font-size:13px;font-weight:700">TOTAL</span><span class="bj-verdict-action" style="font-size:22px">'+(totalNet>=0?'+':'')+totalNet.toFixed(2)+'</span></div></div>';
+    }
+    /* SPLIT MODE — verdict for current sub-hand */
+    if(this.st.splitMode){
+      const cur=this._curSplitHand();
+      if(!cur)return'';
+      const ph=handTotal(cur.cards);
+      const isAces=cur.isAces;
+      if(cur.cards.length<2){
+        return'<div class="settings-card" style="text-align:center;color:var(--text-muted);padding:14px"><div style="font-size:14px;font-weight:600">Tape la 2e carte de la main '+(this.st.splitIdx+1)+(isAces?' (As : 1 carte uniquement)':'')+'</div></div>';
+      }
+      if(ph.isBust){
+        return'<div class="settings-card bj-verdict" style="color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent);border:2px solid currentColor;text-align:center;margin-bottom:var(--space-md)"><div class="bj-verdict-action">BUST</div><div class="bj-verdict-detail">Main '+(this.st.splitIdx+1)+' perdue</div></div>';
+      }
+      /* Show advisor for current sub-hand */
+      const opts=sess?{h17:sess.h17,das:sess.das,surrender:false,canDouble:cur.cards.length===2&&!isAces,canSplit:false}:{canDouble:true,canSplit:false};
+      const upCard=this.st.splitDealer[0];
+      if(!upCard)return'';
+      const r=stratLookup(cur.cards,upCard,opts);
+      const col=ACTION_COLOR[r.action]||'var(--text)';
+      const lbl=ACTION_LABEL[r.action]||r.action;
+      const detail='Main '+(this.st.splitIdx+1)+' · '+ph.total+(ph.soft?' soft':'')+' vs '+upCard;
+      return'<div class="settings-card bj-verdict" style="color:'+col+';background:color-mix(in srgb,'+col+' 12%,transparent);border:2px solid currentColor;text-align:center;margin-bottom:var(--space-md)"><div class="bj-verdict-action">'+lbl+'</div><div class="bj-verdict-detail">'+detail+'</div></div>';
+    }
+    /* NORMAL MODE — single result */
+    if(result){
+      const rl={W:'GAGNÉ',L:'PERDU',P:'PUSH',BJ:'BLACKJACK ✨',SR:'SURRENDER'}[result];
+      const rc=result==='W'||result==='BJ'?'var(--accent)':result==='P'?'var(--text-muted)':'var(--red)';
+      const bet=this.st.currentBet||0;
+      const pay=this._payoutFor(result,bet,this._inferAction());
+      const net=pay.payout-pay.actualBet;
+      return'<div class="settings-card bj-verdict" style="color:'+rc+';background:color-mix(in srgb,'+rc+' 10%,transparent);border:2px solid currentColor;text-align:center;margin-bottom:var(--space-md)"><div class="bj-verdict-action" style="font-size:26px">'+rl+'</div><div class="bj-verdict-detail">'+(net>=0?'+':'')+net.toFixed(2)+' (mise '+pay.actualBet.toFixed(2)+')</div></div>';
+    }
+    if(this.st.p.length>=2&&this.st.d.length===1&&!this.st.explicitAction){
+      const opts=sess?{h17:sess.h17,das:sess.das,surrender:sess.surrender,canDouble:this.st.p.length===2,canSplit:this.st.p.length===2&&handTotal(this.st.p).isPair}:{canDouble:true,canSplit:true};
+      const r=stratLookup(this.st.p,this.st.d[0],opts);
+      const ph=handTotal(this.st.p);
+      const col=ACTION_COLOR[r.action]||'var(--text)';
+      const lbl=ACTION_LABEL[r.action]||r.action;
+      const detail=ph.isBJ?'Tape la 2e carte croupier (vérif BJ)':ph.isBust?'Tu as fait sauter':'Total '+ph.total+(ph.soft?' soft':'')+' vs '+this.st.d[0];
+      return'<div class="settings-card bj-verdict" style="color:'+col+';background:color-mix(in srgb,'+col+' 12%,transparent);border:2px solid currentColor;text-align:center;margin-bottom:var(--space-md)"><div class="bj-verdict-action">'+lbl+'</div><div class="bj-verdict-detail">'+detail+'</div></div>';
+    }
+    /* Hint */
+    let hint;
+    if(this.st.p.length<2)hint='Tape tes 2 cartes';
+    else if(this.st.d.length===0)hint='Tape la up card du croupier';
+    else if(this.st.explicitAction&&this.st.d.length>=1)hint='Tape les cartes du croupier jusqu\'à ≥17';
+    else hint='Continue à taper les cartes';
+    return'<div class="settings-card" style="text-align:center;color:var(--text-muted);padding:14px"><div style="font-size:14px;font-weight:600">'+hint+'</div></div>';
+  },
+
+  _renderCardGrid(){
+    return'<div class="settings-card" style="padding:8px"><div class="bj-card-grid">'+['2','3','4','5','6','7','8','9','T','A'].map(c=>'<button class="bj-card-btn" data-card="'+c+'">'+c+'</button>').join('')+'</div></div>';
+  },
+
+  /* ── Bind ── */
+  _bind(){
+    const $=i=>document.getElementById(i);
+    document.querySelectorAll('#viewBlackjack .bj-card-btn').forEach(b=>b.addEventListener('click',()=>this._addCard(b.dataset.card)));
+    document.querySelectorAll('#viewBlackjack [data-target]').forEach(z=>z.addEventListener('click',()=>{this._target=z.dataset.target;this.render()}));
+    document.querySelectorAll('#viewBlackjack [data-splitidx]').forEach(z=>z.addEventListener('click',()=>{const i=+z.dataset.splitidx;const sh=this.st.splitHands[i];if(sh&&!sh.done){this.st.splitIdx=i;this._target='p';this.render()}}));
+    $('bjBetInp')?.addEventListener('input',e=>{this.st.currentBet=parseFloat(e.target.value)||0;this._refreshVerdictPnL()});
+    $('bjBetDec')?.addEventListener('click',()=>{const v=this.st.currentBet||0;const step=v<5?0.5:v<25?1:v<100?5:v<500?25:100;this._setBetUI(Math.max(0,v-step))});
+    $('bjBetInc')?.addEventListener('click',()=>{const v=this.st.currentBet||0;const step=v<5?0.5:v<25?1:v<100?5:v<500?25:100;this._setBetUI(v+step)});
+    document.querySelectorAll('[data-betset]').forEach(b=>b.addEventListener('click',()=>this._setBetUI(parseFloat(b.dataset.betset))));
+    $('bjActStand')?.addEventListener('click',()=>this._setAction('STAND'));
+    $('bjActDouble')?.addEventListener('click',()=>this._setAction('DOUBLE'));
+    $('bjActSplit')?.addEventListener('click',()=>this._setAction('SPLIT'));
+    $('bjActSR')?.addEventListener('click',()=>this._setAction('SURRENDER'));
+    document.querySelectorAll('[data-ppset]').forEach(b=>b.addEventListener('click',()=>{if((this.st.ppBet||0)<=0)return;this.st.ppMult=parseFloat(b.dataset.ppset);this.render()}));
+    document.querySelectorAll('[data-tpset]').forEach(b=>b.addEventListener('click',()=>{if((this.st.tpBet||0)<=0)return;this.st.tpMult=parseFloat(b.dataset.tpset);this.render()}));
+    /* Side bet amount inputs — partial DOM update preserves keyboard focus */
+    $('ppBetInp')?.addEventListener('input',e=>{
+      const v=parseFloat(e.target.value)||0;this.st.ppBet=v;
+      if(v<=0)this.st.ppMult=0;
+      const togs=document.getElementById('ppTogs');
+      if(togs)togs.style.cssText=v>0?'':'opacity:.4;pointer-events:none';
+    });
+    $('tpBetInp')?.addEventListener('input',e=>{
+      const v=parseFloat(e.target.value)||0;this.st.tpBet=v;
+      if(v<=0)this.st.tpMult=0;
+      const togs=document.getElementById('tpTogs');
+      if(togs)togs.style.cssText=v>0?'':'opacity:.4;pointer-events:none';
+    });
+    $('bjUndo')?.addEventListener('click',()=>this._undo());
+    $('bjReset')?.addEventListener('click',()=>{this._resetHand();this.render()});
+    $('bjStart')?.addEventListener('click',()=>this.fStart());
+    $('bjEditSess')?.addEventListener('click',()=>this.fStart(true));
+    $('bjCloseSess')?.addEventListener('click',()=>this.cashout());
+    $('bjLog')?.addEventListener('click',()=>this._logHand());
+    document.querySelectorAll('[data-bjsess]').forEach(r=>r.addEventListener('click',()=>this.detail(+r.dataset.bjsess)));
+  },
+
+  _addCard(c){
+    /* === SPLIT MODE === */
+    if(this.st.splitMode){
+      if(this._target==='p'){
+        const cur=this._curSplitHand();
+        if(!cur||cur.done)return;
+        if(this.st.afterDouble){
+          /* Single card after DOUBLE → auto-stand this sub-hand */
+          cur.cards.push(c);
+          cur.done=true;
+          this.st.afterDouble=false;
+          this._advanceSplit();
+        } else {
+          if(cur.cards.length<6)cur.cards.push(c);
+          /* Special: split aces get exactly 1 card per hand, no further actions */
+          if(cur.isAces&&cur.cards.length===2){
+            cur.action='STAND';
+            cur.done=true;
+            this._advanceSplit();
+          } else if(cur.cards.length>=2){
+            /* Check bust */
+            const ht=handTotal(cur.cards);
+            if(ht.isBust){cur.action=cur.action||'HIT';cur.done=true;this._advanceSplit()}
+          }
+        }
+      } else {
+        /* Dealer cards in split mode use this.st.splitDealer (single up card already there) */
+        if(this.st.splitDealer.length===0){
+          /* Shouldn't happen — up card was preserved at split-time */
+          this.st.splitDealer.push(c);
+        } else {
+          this.st.splitDealer.push(c);
+        }
+      }
+      this.render();return;
+    }
+
+    /* === NORMAL MODE === */
+    if(this._target==='p'){
+      if(this.st.afterDouble){
+        this.st.p.push(c);this.st.afterDouble=false;this._target='d';
+      } else {
+        if(this.st.p.length<6)this.st.p.push(c);
+        if(this.st.p.length===2&&this.st.d.length===0)this._target='d';
+      }
+    } else {
+      /* Dealer card */
+      if(this.st.d.length===0){
+        this.st.d.push(c);
+        /* After up card: if player has BJ, KEEP target on dealer (peek check / log dealer hand).
+           Otherwise switch to player so they can hit. */
+        if(this.st.p.length>=2&&handTotal(this.st.p).isBJ){
+          this._target='d';
+        } else if(this.st.p.length>=2&&!this.st.explicitAction){
+          this._target='p';
+        }
+      } else {
+        /* Subsequent dealer cards = dealer is playing → infer STAND if not set */
+        if(!this.st.explicitAction&&this.st.p.length>=2)this.st.explicitAction='STAND';
+        this.st.d.push(c);
+      }
+    }
+    this.render();
+  },
+
+  _setAction(act){
+    if(act==='SPLIT'){
+      /* Enter split mode: create 2 sub-hands, each starting with one of the pair */
+      if(this.st.p.length!==2||!handTotal(this.st.p).isPair)return;
+      const c1=this.st.p[0],c2=this.st.p[1];
+      const isAces=cv(c1)===1;
+      this.st.splitMode=true;
+      this.st.splitHands=[
+        {cards:[c1],action:null,doubled:false,isAces,done:false},
+        {cards:[c2],action:null,doubled:false,isAces,done:false}
+      ];
+      this.st.splitIdx=0;
+      this.st.splitDealer=[...this.st.d]; /* preserve dealer up card */
+      this.st.p=[];this.st.d=[]; /* clear pre-split arrays */
+      this.st.explicitAction=null;
+      this._target='p'; /* now waiting for 2nd card of sub-hand 1 */
+      this.render();return;
+    }
+    if(this.st.splitMode){
+      const cur=this._curSplitHand();
+      if(!cur||cur.done)return;
+      if(act==='STAND'){cur.action='STAND';cur.done=true;this._advanceSplit()}
+      else if(act==='DOUBLE'){
+        if(cur.cards.length!==2)return;
+        cur.action='DOUBLE';cur.doubled=true;
+        /* DOUBLE = exactly one more card then auto-stand */
+        this.st.afterDouble=true;
+        this._target='p';
+      }
+      else if(act==='SURRENDER'){return} /* not allowed after split */
+      this.render();return;
+    }
+    if(act==='STAND'){this.st.explicitAction='STAND';this._target='d'}
+    else if(act==='DOUBLE'){this.st.explicitAction='DOUBLE';this.st.afterDouble=true;this._target='p'}
+    else if(act==='SURRENDER'){this.st.explicitAction='SURRENDER'}
+    this.render();
+  },
+
+  /* Advance to next sub-hand or to dealer phase */
+  _advanceSplit(){
+    const next=this.st.splitHands.findIndex((h,i)=>i>this.st.splitIdx&&!h.done);
+    if(next>=0){
+      this.st.splitIdx=next;
+      this._target='p'; /* tap 2nd card of next sub-hand */
+    } else {
+      /* All sub-hands done — move to dealer */
+      this._target='d';
+    }
+  },
+
+  _undo(){
+    /* === SPLIT MODE === */
+    if(this.st.splitMode){
+      /* Order: dealer extra cards → undo current sub-hand action / cards → exit split */
+      if(this.st.splitDealer.length>1){this.st.splitDealer.pop();return this.render()}
+      const cur=this._curSplitHand();
+      /* If current hand was just marked done by stand/double — undo the action first */
+      if(cur&&cur.done&&cur.action){
+        cur.done=false;cur.action=null;cur.doubled=false;
+        this.st.afterDouble=false;
+        this._target='p';
+        return this.render();
+      }
+      /* Undo the most recently played sub-hand if current is empty/incomplete */
+      const lastDone=[...this.st.splitHands].map((h,i)=>({h,i})).reverse().find(x=>x.h.done);
+      if(cur&&cur.cards.length<=1&&lastDone){
+        lastDone.h.done=false;lastDone.h.action=null;lastDone.h.doubled=false;
+        this.st.splitIdx=lastDone.i;
+        this._target='p';
+        return this.render();
+      }
+      /* Pop a card from current sub-hand */
+      if(cur&&cur.cards.length>1){cur.cards.pop();return this.render()}
+      /* If we're at start of sub-hand 1 with no cards added yet — exit split */
+      if(this.st.splitIdx===0&&cur&&cur.cards.length===1){
+        const c1=this.st.splitHands[0].cards[0],c2=this.st.splitHands[1].cards[0];
+        this.st.p=[c1,c2];this.st.d=[...this.st.splitDealer];
+        this.st.splitMode=false;this.st.splitHands=[];this.st.splitIdx=0;this.st.splitDealer=[];
+        this._target='p';
+        return this.render();
+      }
+      return this.render();
+    }
+    /* === NORMAL MODE === */
+    /* Order of undo: dealer extra cards → action → player extra cards → up card → starting cards */
+    if(this.st.d.length>1){this.st.d.pop();return this.render()}
+    if(this.st.explicitAction){
+      this.st.explicitAction=null;this.st.afterDouble=false;
+      /* If we're not at base 2-card hand, target stays p, else d */
+      this._target=this.st.p.length>2?'p':(this.st.d.length===0?'d':'p');
+      return this.render();
+    }
+    if(this.st.p.length>2){this.st.p.pop();this._target='p';return this.render()}
+    if(this.st.d.length===1){this.st.d.pop();this._target='d';return this.render()}
+    if(this.st.p.length>0){this.st.p.pop();this._target='p';return this.render()}
+    this.render();
+  },
+
+  /* ── Log ── */
+  async _logHand(){
+    if(!this.st.sessionId)return T.warn('Aucune session active');
+    const sess=await db.bjSessions.get(this.st.sessionId);
+    const result=this._computeResult(sess);
+    if(!result)return T.warn('La main n\'est pas terminée');
+    const bet=this.st.currentBet||0;
+    if(bet<=0)return T.warn('Mise requise');
+
+    /* === SPLIT MODE — log each sub-hand as separate DB entry === */
+    if(this.st.splitMode&&Array.isArray(result)){
+      const splitGroup='sp_'+Date.now();
+      const dlrUp=this.st.splitDealer[0];
+      const dealerCards=this.st.splitDealer.join('');
+      try{
+        const ts=Date.now();
+        for(let i=0;i<result.length;i++){
+          const sh=this.st.splitHands[i];
+          const r=result[i];
+          const action=sh.action||'STAND';
+          const{actualBet,payout}=this._payoutFor(r,bet,action);
+          /* Per-sub-hand recommendation: lookup at the 2-card decision point.
+             Aces split is forced auto-stand → no adherence to track. */
+          let subRecommended=null;
+          if(!sh.isAces&&sh.cards.length>=2){
+            const subOpts={h17:sess.h17,das:sess.das,surrender:false,canDouble:sh.cards.length===2,canSplit:false};
+            const sl=stratLookup(sh.cards.slice(0,2),dlrUp,subOpts);
+            if(sl)subRecommended=sl.action;
+          }
+          const subRec={sessionId:this.st.sessionId,ts:ts+i,playerCards:sh.cards.join(''),dealerCard:dlrUp,dealerCards,bet:actualBet,action,result:r,payout,splitGroup,splitIdx:i};
+          if(subRecommended)subRec.recommended=subRecommended;
+          /* Side bets attached only to first sub-hand to avoid double counting */
+          if(i===0){
+            if((this.st.ppBet||0)>0){const m=this.st.ppMult,b=this.st.ppBet;subRec.pp={bet:b,mult:m,payout:m>0?(b+b*m):0}}
+            if((this.st.tpBet||0)>0){const m=this.st.tpMult,b=this.st.tpBet;subRec.tp={bet:b,mult:m,payout:m>0?(b+b*m):0}}
+          }
+          await db.bjHands.add(subRec);
+        }
+        this.st.lastBet=bet;
+        this._resetHand();
+        T.ok(result.length+' mains split enregistrées');
+        await this.render();await App.uBR();
+      }catch(e){T.err(e.message)}
+      return;
+    }
+
+    /* === NORMAL MODE === */
+    const action=this._inferAction();
+    const{actualBet,payout}=this._payoutFor(result,bet,action);
+    const cards=this.st.p.join(''),dlr=this.st.d[0];
+    /* Recommended action for adherence — use original 2-card decision */
+    const opts={h17:sess.h17,das:sess.das,surrender:sess.surrender,canDouble:true,canSplit:handTotal(this.st.p.slice(0,2)).isPair};
+    const rec=stratLookup(this.st.p.slice(0,2),this.st.d[0],opts);
+    const recObj={sessionId:this.st.sessionId,ts:Date.now(),playerCards:cards,dealerCard:dlr,dealerCards:this.st.d.join(''),bet:actualBet,action,result,payout,recommended:rec.action};
+    /* Side bets — only logged if a per-hand bet was entered */
+    if((this.st.ppBet||0)>0){
+      const m=this.st.ppMult,b=this.st.ppBet;
+      recObj.pp={bet:b,mult:m,payout:m>0?(b+b*m):0};
+    }
+    if((this.st.tpBet||0)>0){
+      const m=this.st.tpMult,b=this.st.tpBet;
+      recObj.tp={bet:b,mult:m,payout:m>0?(b+b*m):0};
+    }
+    try{
+      await db.bjHands.add(recObj);
+      this.st.lastBet=bet;
+      this._resetHand();
+      T.ok('Main enregistrée');
+      await this.render();await App.uBR();
+    }catch(e){T.err(e.message)}
+  },
+
+  /* ── Session start/edit (kept from previous) ── */
+  async fStart(isEdit=false){
+    const c=await S.get('currency')||'EUR',sc=sy(c);
+    const cur=isEdit?await db.bjSessions.get(this.st.sessionId):null;
+    const dd=cur?.date||new Date().toISOString().split('T')[0];
+    const dep=cur?.deposit||'';const dbet=cur?.defaultBet||5;
+    const ppDef=cur?.ppDefault||'',tpDef=cur?.tpDefault||'';
+    const h17=cur?cur.h17:await S.get('bjH17');
+    const das=cur?cur.das:await S.get('bjDAS');
+    const sur=cur?cur.surrender:await S.get('bjSurrender');
+    M.open({title:isEdit?'⚙️ Réglages session':'🎯 Nouvelle session BJ',
+      body:'<div class="form-group"><label>Date</label><input type="date" class="input" id="_bd" value="'+dd+'"></div>'+
+      '<div class="form-group"><label>Dépôt ('+sc+')</label><input type="number" class="input" id="_bdep" value="'+dep+'" placeholder="100" min="0" step="1"'+(isEdit?' readonly':'')+'></div>'+
+      '<div class="form-group"><label>Mise habituelle ('+sc+') <span class="text-muted text-sm" style="font-weight:400">— modifiable à chaque main</span></label><input type="number" class="input" id="_bbet" value="'+dbet+'" min="0.5" step="0.5"></div>'+
+      '<div class="form-group"><label>Side bet défaut PP / 21+3 ('+sc+')</label><div style="display:flex;gap:var(--space-sm)"><input type="number" class="input" id="_bpp" value="'+ppDef+'" placeholder="0" min="0" step="0.5" style="flex:1"><input type="number" class="input" id="_btp" value="'+tpDef+'" placeholder="0" min="0" step="0.5" style="flex:1"></div><span class="text-muted text-sm">Pré-remplit la mise à chaque main · Laisse à 0 pour saisir au cas par cas</span></div>'+
+      '<div class="form-group"><label>Règles de table</label><div class="bj-toggle-grid"><div class="bj-toggle '+(h17?'on':'')+'" data-tog="h17">H17 <span>'+(h17?'✓':'')+'</span></div><div class="bj-toggle '+(das?'on':'')+'" data-tog="das">DAS <span>'+(das?'✓':'')+'</span></div><div class="bj-toggle '+(sur?'on':'')+'" data-tog="sur">Surrender <span>'+(sur?'✓':'')+'</span></div><div class="bj-toggle off" style="opacity:.5">8 decks</div></div></div>',
+      footer:'<button class="btn btn-outline" id="_bca" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bsv" style="flex:1">'+(isEdit?'Sauvegarder':'Démarrer')+'</button>'});
+    const $=i=>document.getElementById(i);
+    let toggles={h17,das,sur};
+    document.querySelectorAll('[data-tog]').forEach(t=>t.addEventListener('click',()=>{toggles[t.dataset.tog]=!toggles[t.dataset.tog];t.classList.toggle('on');t.querySelector('span').textContent=toggles[t.dataset.tog]?'✓':''}));
+    $('_bca').onclick=()=>M.close();
+    $('_bsv').onclick=async()=>{
+      const data={date:$('_bd').value||new Date().toISOString().split('T')[0],defaultBet:parseFloat($('_bbet').value)||5,ppDefault:parseFloat($('_bpp').value)||0,tpDefault:parseFloat($('_btp').value)||0,h17:toggles.h17,das:toggles.das,surrender:toggles.sur};
+      try{
+        if(isEdit){await db.bjSessions.update(this.st.sessionId,data);T.ok('Sauvegardé')}
+        else{data.deposit=parseFloat($('_bdep').value)||0;data.cashout=null;data.notes='';
+          await S.set('bjH17',toggles.h17);await S.set('bjDAS',toggles.das);await S.set('bjSurrender',toggles.sur);
+          await db.bjSessions.add(data);this.st.currentBet=data.defaultBet;T.ok('Session démarrée')}
+        M.close();await this.render();await App.uBR();
+      }catch(e){T.err(e.message)}
+    };
+  },
+
+  async cashout(){
+    if(!this.st.sessionId)return;
+    const s=await db.bjSessions.get(this.st.sessionId);
+    const hands=await db.bjHands.where('sessionId').equals(this.st.sessionId).toArray();
+    const st=BJS.compute(hands);
+    const c=await S.get('currency')||'EUR',sc=sy(c);
+    const suggested=(s.deposit||0)+st.profit;
+    let summary='<div class="stat-grid" style="margin-bottom:var(--space-md)">';
+    summary+='<div class="stat-box"><div class="stat-value '+(st.profit>=0?'positive':'negative')+'">'+fC(st.profit,c)+'</div><div class="stat-label">P/L</div></div>';
+    summary+='<div class="stat-box"><div class="stat-value">'+st.total+'</div><div class="stat-label">Mains</div></div>';
+    summary+='<div class="stat-box"><div class="stat-value">'+st.winrate.toFixed(0)+'%</div><div class="stat-label">Winrate</div></div>';
+    summary+='<div class="stat-box"><div class="stat-value">'+st.maxW+'/'+st.maxL+'</div><div class="stat-label">Max W/L</div></div>';
+    summary+='</div>';
+    let extra='';
+    if(st.adherence!=null)extra+='<div class="rtp-row"><div class="rtp-machine">📚 Basic strategy</div><div class="rtp-values"><span class="stat-value-sm '+(st.adherence>=90?'positive':st.adherence>=75?'':'negative')+'">'+st.adherence.toFixed(0)+'%</span><span class="text-muted text-sm">'+st.adherenceCount+'</span></div></div>';
+    if(st.BJ>0)extra+='<div class="rtp-row"><div class="rtp-machine">Blackjacks</div><div class="rtp-values"><span class="stat-value-sm positive">'+st.BJ+' ('+st.bjRate.toFixed(1)+'%)</span></div></div>';
+    if(st.pp.count>0)extra+='<div class="rtp-row"><div class="rtp-machine">🎴 Perfect Pairs</div><div class="rtp-values"><span class="text-muted text-sm">'+st.pp.hits+'/'+st.pp.count+'</span><span class="stat-value-sm '+(st.pp.net>=0?'positive':'negative')+'">'+fC(st.pp.net,c)+'</span></div></div>';
+    if(st.tp.count>0)extra+='<div class="rtp-row"><div class="rtp-machine">🃏 21+3</div><div class="rtp-values"><span class="text-muted text-sm">'+st.tp.hits+'/'+st.tp.count+'</span><span class="stat-value-sm '+(st.tp.net>=0?'positive':'negative')+'">'+fC(st.tp.net,c)+'</span></div></div>';
+    M.open({title:'💰 Clôturer session',
+      body:summary+(extra?extra+'<div class="separator"></div>':'')+'<p class="text-muted text-sm" style="margin-bottom:var(--space-sm)">Dépôt initial : '+fA(s.deposit||0,c)+'</p><div class="form-group"><label>Cashout final ('+sc+')</label><input type="number" class="input" id="_bcov" value="'+suggested.toFixed(2)+'" min="0" step="0.5" autofocus></div>',
+      footer:'<button class="btn btn-outline" id="_bclc" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bcls" style="flex:1">Clôturer</button>'});
+    const $=i=>document.getElementById(i);
+    $('_bclc').onclick=()=>M.close();
+    $('_bcls').onclick=async()=>{
+      const v=parseFloat($('_bcov').value);if(isNaN(v)){T.warn('Cashout requis');return}
+      await db.bjSessions.update(this.st.sessionId,{cashout:v});
+      T.ok('Clôturée');M.close();this.st.sessionId=null;this.st.currentBet=null;this._resetHand();await this.render();await App.uBR();
+    };
+  },
+
+  async detail(id){
+    const s=await db.bjSessions.get(id);if(!s)return;
+    const hands=await db.bjHands.where('sessionId').equals(id).toArray();
+    hands.sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const c=await S.get('currency')||'EUR';
+    const st=BJS.compute(hands);
+    const pr=(s.cashout||0)-(s.deposit||0);
+    let body='<div class="stat-grid"><div class="stat-box"><div class="stat-value">'+fA(s.deposit||0,c)+'</div><div class="stat-label">Dépôt</div></div><div class="stat-box"><div class="stat-value">'+fA(s.cashout||0,c)+'</div><div class="stat-label">Cashout</div></div><div class="stat-box"><div class="stat-value '+(pr>=0?'positive':'negative')+'">'+fC(pr,c)+'</div><div class="stat-label">Résultat</div></div><div class="stat-box"><div class="stat-value">'+st.total+'</div><div class="stat-label">Mains</div></div></div><div class="separator"></div>';
+    body+='<div class="rtp-row"><div class="rtp-machine">Winrate</div><div class="rtp-values"><span class="stat-value-sm">'+st.winrate.toFixed(1)+'%</span></div></div>';
+    if(st.adherence!=null)body+='<div class="rtp-row"><div class="rtp-machine">Basic strategy</div><div class="rtp-values"><span class="stat-value-sm '+(st.adherence>=90?'positive':st.adherence>=75?'':'negative')+'">'+st.adherence.toFixed(0)+'%</span><span class="text-muted text-sm">'+st.adherenceCount+'</span></div></div>';
+    body+='<div class="rtp-row"><div class="rtp-machine">Streaks max</div><div class="rtp-values"><span class="stat-value-sm positive">'+st.maxW+'W</span><span class="stat-value-sm negative">'+st.maxL+'L</span></div></div>';
+    body+='<div class="rtp-row"><div class="rtp-machine">BJ / Push</div><div class="rtp-values"><span class="stat-value-sm">'+st.BJ+' / '+st.P+'</span></div></div>';
+    if(st.pp.count>0)body+='<div class="rtp-row"><div class="rtp-machine">🎴 Perfect Pairs</div><div class="rtp-values"><span class="text-muted text-sm">'+st.pp.hits+'/'+st.pp.count+'</span><span class="stat-value-sm '+(st.pp.net>=0?'positive':'negative')+'">'+fC(st.pp.net,c)+'</span></div></div>';
+    if(st.tp.count>0)body+='<div class="rtp-row"><div class="rtp-machine">🃏 21+3</div><div class="rtp-values"><span class="text-muted text-sm">'+st.tp.hits+'/'+st.tp.count+'</span><span class="stat-value-sm '+(st.tp.net>=0?'positive':'negative')+'">'+fC(st.tp.net,c)+'</span></div></div>';
+    body+='<div class="rtp-row"><div class="rtp-machine">Règles</div><div class="rtp-values"><span class="text-muted text-sm">'+(s.h17?'H17':'S17')+(s.das?' · DAS':'')+(s.surrender?' · Surr':'')+'</span></div></div>';
+    M.open({title:'🃏 Session '+fD(s.date),body,footer:'<button class="btn btn-danger" style="flex:.5" id="_bds">🗑️</button><button class="btn btn-outline" style="flex:1" id="_bcl">Fermer</button>'});
+    document.getElementById('_bcl').onclick=()=>M.close();
+    document.getElementById('_bds').onclick=async()=>{await M.waitClose();if(await M.confirm({title:'🗑️',message:'Supprimer session + mains ?',confirmText:'Supprimer',danger:true})){await db.bjHands.where('sessionId').equals(id).delete();await db.bjSessions.delete(id);T.ok('Supprimée');await this.render();await App.uBR()}};
+  }
+};
+/* ═══ BONUS HUNT MODULE ═══ */
+const BH={
+  st:{viewSession:null}, /* currently selected hunt session id, or null = list view */
+
+  async init(){await this.render()},
+
+  /* Aggregate stats for a hunt session given its bonuses array */
+  compute(sess,bonuses){
+    const opened=bonuses.filter(b=>b.payout!=null);
+    const remaining=bonuses.filter(b=>b.payout==null);
+    const totalCost=bonuses.reduce((s,b)=>s+(b.cost||0),0);
+    const totalPayout=opened.reduce((s,b)=>s+(b.payout||0),0);
+    const openedCost=opened.reduce((s,b)=>s+(b.cost||0),0);
+    const remainingCost=remaining.reduce((s,b)=>s+(b.cost||0),0);
+    /* avgX = average payout multiplier on opened bonuses (payout / cost) */
+    const avgXOpened=openedCost>0?totalPayout/openedCost:0;
+    /* X required on remaining bonuses to break even on the whole hunt
+       payout_remaining_needed = max(0, deposit - totalPayout)
+       avgX_needed = needed / remainingCost */
+    const dep=sess.deposit||0;
+    const remainingNeed=Math.max(0,dep-totalPayout);
+    const xNeeded=remainingCost>0?remainingNeed/remainingCost:null;
+    /* Best/worst bonus by multiplier */
+    const opMult=opened.map(b=>({...b,mult:b.cost>0?b.payout/b.cost:0}));
+    opMult.sort((a,b)=>b.mult-a.mult);
+    return{
+      totalCost,totalPayout,openedCost,remainingCost,
+      openedCount:opened.length,remainingCount:remaining.length,totalCount:bonuses.length,
+      avgXOpened,xNeeded,
+      best:opMult[0]||null,worst:opMult[opMult.length-1]||null,
+      hunRTP:totalCost>0?totalPayout/totalCost:0,
+      profit:dep>0?totalPayout-dep:0
+    };
+  },
+
+  async render(){
+    const v=document.getElementById('viewBonusHunt');if(!v)return;
+    if(this.st.viewSession){await this._renderDetail(v);return}
+    await this._renderList(v);
+  },
+
+  async _renderList(v){
+    const sess=await db.bhSessions.orderBy('date').reverse().toArray();
+    const c=await S.get('currency')||'EUR';
+    let html='<div class="view-inner"><div class="view-header"><h2 class="view-title">🎯 Bonus Hunt</h2><button class="btn btn-primary" id="bhNew">+ Nouvelle hunt</button></div>';
+    if(sess.length===0){
+      html+='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">Aucune hunt</div><div class="empty-desc">Démarre une chasse aux bonus pour mesurer ton RTP global</div></div>';
+    } else {
+      for(const s of sess){
+        const bonuses=await db.bhBonuses.where('sessionId').equals(s.id).toArray();
+        const st=this.compute(s,bonuses);
+        const date=new Date(s.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+        let profitTxt,profitClass='';
+        if(s.cashout!=null){profitTxt=fC(s.cashout-(s.deposit||0),c);profitClass=s.cashout>=(s.deposit||0)?'positive':'negative'}
+        else if(st.openedCount>0){profitTxt=fA(st.totalPayout,c)+' / '+fA(s.deposit||0,c)}
+        else{profitTxt='En cours'}
+        html+='<div class="card session-card" data-bhsid="'+s.id+'"><div class="session-card-row"><div><div class="session-card-title">'+esc(s.title||'Hunt #'+s.id)+'</div><div class="session-card-meta">'+date+' · '+st.totalCount+' bonus · <span class="bh-status '+s.status+'">'+s.status+'</span></div></div><div class="session-card-amount '+profitClass+'">'+profitTxt+'</div></div></div>';
+      }
+    }
+    html+='</div>';
+    v.innerHTML=html;
+    document.getElementById('bhNew')?.addEventListener('click',()=>this.fNew());
+    document.querySelectorAll('[data-bhsid]').forEach(el=>el.addEventListener('click',()=>{this.st.viewSession=+el.dataset.bhsid;this.render()}));
+  },
+
+  async _renderDetail(v){
+    const sid=this.st.viewSession;
+    const sess=await db.bhSessions.get(sid);
+    if(!sess){this.st.viewSession=null;this.render();return}
+    const bonuses=await db.bhBonuses.where('sessionId').equals(sid).sortBy('order');
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    const st=this.compute(sess,bonuses);
+    const closed=sess.status==='closed';
+    const opening=sess.status==='opening';
+    const date=new Date(sess.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    let html='<div class="view-inner"><div class="view-header" style="display:flex;gap:var(--space-sm);align-items:center"><button class="btn btn-outline" id="bhBack" style="flex:0">← Retour</button><div style="flex:1"></div>';
+    if(!closed)html+='<button class="btn btn-outline" id="bhEditSess" title="Modifier" style="flex:0;padding:8px 12px">✏️</button>';
+    html+='<button class="btn btn-outline" id="bhDel" title="Supprimer" style="flex:0;padding:8px 12px">🗑️</button></div>';
+
+    /* Session header card */
+    html+='<div class="settings-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-size:18px;font-weight:700">'+esc(sess.title||'Hunt #'+sess.id)+'</div><div class="text-muted text-sm">'+date+'</div></div><span class="bh-status '+sess.status+'">'+sess.status+'</span></div>';
+    html+='<div class="bh-stats-grid">';
+    html+='<div class="bh-stat"><div class="bh-stat-label">Dépôt</div><div class="bh-stat-value">'+fA(sess.deposit||0,c)+'</div></div>';
+    html+='<div class="bh-stat"><div class="bh-stat-label">Coût total mises</div><div class="bh-stat-value">'+fA(st.totalCost,c)+'</div></div>';
+    html+='<div class="bh-stat"><div class="bh-stat-label">Bonus ouverts</div><div class="bh-stat-value">'+st.openedCount+' / '+st.totalCount+'</div></div>';
+    html+='<div class="bh-stat"><div class="bh-stat-label">Total gagné</div><div class="bh-stat-value">'+fA(st.totalPayout,c)+'</div></div>';
+    html+='</div>';
+
+    /* Goal progress */
+    if(sess.goalCount){
+      const pct=Math.min(100,(st.totalCount/sess.goalCount)*100);
+      const offTarget=sess.goalMaxSpins?bonuses.filter(b=>(b.spinsToTrigger||0)>sess.goalMaxSpins).length:0;
+      const goalLine='<span>'+st.totalCount+' / '+sess.goalCount+' bonus'+(sess.goalMaxSpins?' · max '+sess.goalMaxSpins+' spins'+(offTarget>0?' · <span style="color:var(--warning)">'+offTarget+' hors cible ⚠️</span>':''):'')+'</span>';
+      html+='<div style="margin-bottom:8px"><div class="text-muted text-sm" style="display:flex;justify-content:space-between"><span>Objectif</span>'+goalLine+'</div><div class="bh-progress"><div class="bh-progress-fill" style="width:'+pct+'%"></div></div></div>';
+    }
+    html+='</div>'; /* close settings-card */
+
+    /* Live opening stats */
+    if(st.openedCount>0||opening||closed){
+      html+='<div class="bh-stats-grid">';
+      const avgXClass=st.avgXOpened>=1?'good':(st.avgXOpened>0?'bad':'');
+      html+='<div class="bh-stat"><div class="bh-stat-label">Avg X ouverts</div><div class="bh-stat-value"><span class="bh-x '+avgXClass+'">'+st.avgXOpened.toFixed(2)+'×</span></div></div>';
+      if(st.xNeeded!==null&&!closed){
+        const xnClass=st.xNeeded<=Math.max(1,st.avgXOpened)?'good':'bad';
+        html+='<div class="bh-stat"><div class="bh-stat-label">X requis sur restants</div><div class="bh-stat-value"><span class="bh-x '+xnClass+'">'+st.xNeeded.toFixed(2)+'×</span></div></div>';
+      }
+      if(closed||sess.cashout!=null){
+        const rtpPct=(st.hunRTP*100).toFixed(1);
+        const rtpClass=st.hunRTP>=1?'good':'bad';
+        html+='<div class="bh-stat"><div class="bh-stat-label">RTP hunt</div><div class="bh-stat-value"><span class="bh-x '+rtpClass+'">'+rtpPct+'%</span></div></div>';
+        const pTxt=fC(st.profit,c);
+        const pClass=st.profit>=0?'positive':'negative';
+        html+='<div class="bh-stat"><div class="bh-stat-label">P/L final</div><div class="bh-stat-value '+pClass+'">'+pTxt+'</div></div>';
+      }
+      html+='</div>';
+    }
+
+    /* Best/worst */
+    if(st.best&&st.openedCount>=2){
+      html+='<div style="display:flex;gap:var(--space-sm);margin-bottom:var(--space-md);font-size:12px">';
+      html+='<div style="flex:1;padding:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:var(--radius)"><div style="font-size:10px;color:var(--success);font-weight:700">🏆 TOP</div><div style="font-weight:600;margin-top:2px">'+esc(st.best.machine)+'</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">'+st.best.mult.toFixed(1)+'× · '+fA(st.best.payout,c)+'</div></div>';
+      if(st.worst&&st.worst.id!==st.best.id){
+        html+='<div style="flex:1;padding:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius)"><div style="font-size:10px;color:var(--danger);font-weight:700">💩 FLOP</div><div style="font-weight:600;margin-top:2px">'+esc(st.worst.machine)+'</div><div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">'+st.worst.mult.toFixed(1)+'× · '+fA(st.worst.payout,c)+'</div></div>';
+      }
+      html+='</div>';
+    }
+
+    /* Action buttons */
+    html+='<div style="display:flex;gap:var(--space-sm);margin-bottom:var(--space-md);flex-wrap:wrap">';
+    if(!closed)html+='<button class="btn btn-primary" id="bhAddBonus" style="flex:1;min-width:140px">+ Ajouter bonus</button>';
+    if(sess.status==='hunting'&&bonuses.length>0)html+='<button class="btn" id="bhStartOpening" style="flex:1;min-width:140px">🎬 Lancer opening</button>';
+    if(opening||(sess.status==='hunting'&&st.openedCount>0))html+='<button class="btn" id="bhClose" style="flex:1;min-width:140px">🏁 Clôturer</button>';
+    if(closed)html+='<button class="btn btn-outline" id="bhReopen" style="flex:1;min-width:140px">↩️ Rouvrir</button>';
+    html+='</div>';
+
+    /* Bonuses list */
+    html+='<h3 style="font-size:14px;margin:var(--space-md) 0 var(--space-sm)">Bonus ('+bonuses.length+')</h3>';
+    if(bonuses.length===0){
+      html+='<div class="text-muted text-sm" style="text-align:center;padding:var(--space-lg)">Aucun bonus encore. Clique sur « + Ajouter bonus ».</div>';
+    } else {
+      html+='<div id="bhBonusList">';
+      bonuses.forEach((b,i)=>{
+        const opened=b.payout!=null;
+        const mult=opened&&b.cost>0?b.payout/b.cost:0;
+        const pnl=opened?(b.payout-(b.cost||0)):0;
+        const cardClass=opened?(pnl>=0?'opened':'opened bad'):'';
+        const offTarget=sess.goalMaxSpins&&(b.spinsToTrigger||0)>sess.goalMaxSpins;
+        html+='<div class="bh-bonus-card '+cardClass+'" data-bid="'+b.id+'">';
+        html+='<div class="bh-bonus-num">#'+(i+1)+'</div>';
+        const spinsTxt=b.spinsToTrigger?(' · '+b.spinsToTrigger+' spins'+(offTarget?' ⚠️':'')):'';
+        html+='<div class="bh-bonus-info"><div class="bh-bonus-machine">'+esc(b.machine||'?')+'</div><div class="bh-bonus-meta'+(offTarget?' off-target':'')+'">Mise '+fA(b.bet||0,c)+spinsTxt+(b.cost?' · Coût '+fA(b.cost,c):'')+'</div></div>';
+        if(opened){
+          html+='<div class="bh-bonus-payout">'+
+            '<div style="font-size:10px;color:var(--text-muted);font-weight:600">'+fA(b.cost||0,c)+' → '+fA(b.payout,c)+'</div>'+
+            '<div class="'+(pnl>=0?'win':'loss')+'" style="font-size:14px;font-weight:700">'+fC(pnl,c)+'</div>'+
+            '<div style="font-size:10px;color:var(--text-muted);font-weight:600">'+mult.toFixed(2)+'×</div>'+
+          '</div>';
+        } else if(!closed){
+          html+='<div class="bh-bonus-payout"><input type="number" class="input bh-payout-inp" data-bid="'+b.id+'" placeholder="payout" min="0" step="0.01" inputmode="decimal"></div>';
+        } else {
+          html+='<div class="bh-bonus-payout text-muted">—</div>';
+        }
+        html+='</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+    v.innerHTML=html;
+
+    /* Bindings */
+    document.getElementById('bhBack').addEventListener('click',()=>{this.st.viewSession=null;this.render()});
+    document.getElementById('bhDel')?.addEventListener('click',()=>this.fDelete(sid));
+    document.getElementById('bhEditSess')?.addEventListener('click',()=>this.fEditSession(sess));
+    document.getElementById('bhAddBonus')?.addEventListener('click',()=>this.fAddBonus(sid,bonuses.length));
+    document.getElementById('bhStartOpening')?.addEventListener('click',async()=>{await db.bhSessions.update(sid,{status:'opening'});await this.render();await App.uBR();T.ok('🎬 Phase d\'opening')});
+    document.getElementById('bhClose')?.addEventListener('click',()=>this.fClose(sess,st));
+    document.getElementById('bhReopen')?.addEventListener('click',async()=>{await db.bhSessions.update(sid,{status:'opening',cashout:null});await this.render();await App.uBR();T.ok('Hunt rouverte')});
+    document.querySelectorAll('.bh-payout-inp').forEach(inp=>{
+      inp.addEventListener('change',async e=>{
+        const bid=+inp.dataset.bid;
+        const val=parseFloat(e.target.value);
+        if(isNaN(val)||val<0){T.warn('Payout invalide');return}
+        await db.bhBonuses.update(bid,{payout:val});
+        T.ok('Payout enregistré');
+        await this.render();
+      });
+    });
+    /* Click on bonus card → edit (but not when clicking the inline payout input) */
+    document.querySelectorAll('.bh-bonus-card[data-bid]').forEach(el=>el.addEventListener('click',e=>{
+      if(e.target.closest('input'))return;
+      this.fEditBonus(+el.dataset.bid);
+    }));
+  },
+
+  async fNew(){
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    M.open({title:'🎯 Nouvelle hunt',
+      body:'<div class="form-group"><label>Titre (optionnel)</label><input type="text" class="input" id="_bhT" placeholder="Stake hunt #1" maxlength="40"></div>'+
+        '<div class="form-group"><label>Dépôt initial ('+sc+')</label><input type="number" class="input" id="_bhD" placeholder="100" min="0" step="0.01" inputmode="decimal" autofocus></div>'+
+        '<div class="form-row">'+
+        '<div class="form-group"><label>Objectif # bonus (opt.)</label><input type="number" class="input" id="_bhGc" placeholder="20" min="0" inputmode="numeric"></div>'+
+        '<div class="form-group"><label>Spins max / bonus (opt.)</label><input type="number" class="input" id="_bhGs" placeholder="100" min="0" inputmode="numeric"></div>'+
+        '</div>',
+      footer:'<button class="btn btn-outline" id="_bhCa" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bhOk" style="flex:1">Démarrer</button>'});
+    document.getElementById('_bhCa').onclick=()=>M.close();
+    document.getElementById('_bhOk').onclick=async()=>{
+      const title=document.getElementById('_bhT').value.trim();
+      const dep=parseFloat(document.getElementById('_bhD').value);
+      const gc=parseInt(document.getElementById('_bhGc').value)||null;
+      const gs=parseInt(document.getElementById('_bhGs').value)||null;
+      if(isNaN(dep)||dep<=0){T.warn('Dépôt requis');return}
+      const id=await db.bhSessions.add({date:new Date().toISOString(),title:title||null,deposit:dep,cashout:null,goalCount:gc,goalMaxSpins:gs,status:'hunting'});
+      M.close();this.st.viewSession=id;await this.render();await App.uBR();T.ok('🎯 Hunt démarrée');
+    };
+  },
+
+  async fEditSession(sess){
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    M.open({title:'✏️ Modifier hunt',
+      body:'<div class="form-group"><label>Titre</label><input type="text" class="input" id="_bhT" value="'+esc(sess.title||'')+'" maxlength="40"></div>'+
+        '<div class="form-group"><label>Dépôt ('+sc+')</label><input type="number" class="input" id="_bhD" value="'+(sess.deposit||'')+'" min="0" step="0.01" inputmode="decimal"></div>'+
+        '<div class="form-row">'+
+        '<div class="form-group"><label>Objectif # bonus</label><input type="number" class="input" id="_bhGc" value="'+(sess.goalCount||'')+'" min="0" inputmode="numeric"></div>'+
+        '<div class="form-group"><label>Spins max / bonus</label><input type="number" class="input" id="_bhGs" value="'+(sess.goalMaxSpins||'')+'" min="0" inputmode="numeric"></div>'+
+        '</div>',
+      footer:'<button class="btn btn-outline" id="_bhCa" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bhOk" style="flex:1">Enregistrer</button>'});
+    document.getElementById('_bhCa').onclick=()=>M.close();
+    document.getElementById('_bhOk').onclick=async()=>{
+      const title=document.getElementById('_bhT').value.trim();
+      const dep=parseFloat(document.getElementById('_bhD').value);
+      const gc=parseInt(document.getElementById('_bhGc').value)||null;
+      const gs=parseInt(document.getElementById('_bhGs').value)||null;
+      if(isNaN(dep)||dep<0){T.warn('Dépôt invalide');return}
+      await db.bhSessions.update(sess.id,{title:title||null,deposit:dep,goalCount:gc,goalMaxSpins:gs});
+      M.close();await this.render();await App.uBR();T.ok('Modifié');
+    };
+  },
+
+  async fAddBonus(sid,nextOrder){
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    const machs=await db.slotMachines.toArray();
+    const dl=machs.map(m=>'<option value="'+esc(m.name)+'">').join('');
+    M.open({title:'+ Ajouter bonus',
+      body:'<div class="form-group"><label>Machine</label><input type="text" class="input" id="_bhM" list="_bhMl" placeholder="Sweet Bonanza" autofocus><datalist id="_bhMl">'+dl+'</datalist></div>'+
+        '<div class="form-row">'+
+        '<div class="form-group"><label>Mise ('+sc+')</label><input type="number" class="input" id="_bhB" placeholder="0.20" min="0" step="0.01" inputmode="decimal"></div>'+
+        '<div class="form-group"><label>Spins to trigger</label><input type="number" class="input" id="_bhS" placeholder="180" min="0" inputmode="numeric"></div>'+
+        '</div>'+
+        '<div class="text-muted text-sm">Coût = mise × spins (calculé auto)</div>',
+      footer:'<button class="btn btn-outline" id="_bhCa" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bhOk" style="flex:1">Ajouter</button>'});
+    document.getElementById('_bhCa').onclick=()=>M.close();
+    document.getElementById('_bhOk').onclick=async()=>{
+      const m=document.getElementById('_bhM').value.trim();
+      const bet=parseFloat(document.getElementById('_bhB').value);
+      const sp=parseInt(document.getElementById('_bhS').value)||0;
+      if(!m){T.warn('Machine requise');return}
+      if(isNaN(bet)||bet<=0){T.warn('Mise requise');return}
+      const cost=bet*sp;
+      await db.bhBonuses.add({sessionId:sid,order:nextOrder,machine:m,bet,spinsToTrigger:sp,cost,payout:null,date:new Date().toISOString()});
+      const exists=machs.find(x=>x.name.toLowerCase()===m.toLowerCase());
+      if(!exists)await db.slotMachines.add({name:m});
+      M.close();await this.render();T.ok('Bonus #'+(nextOrder+1)+' ajouté');
+    };
+  },
+
+  async fEditBonus(bid){
+    const b=await db.bhBonuses.get(bid);if(!b)return;
+    const sess=await db.bhSessions.get(b.sessionId);
+    const closed=sess?.status==='closed';
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    const machs=await db.slotMachines.toArray();
+    const dl=machs.map(m=>'<option value="'+esc(m.name)+'">').join('');
+    M.open({title:'Bonus #'+((b.order||0)+1),
+      body:'<div class="form-group"><label>Machine</label><input type="text" class="input" id="_bhM" list="_bhMl" value="'+esc(b.machine||'')+'" '+(closed?'disabled':'')+'><datalist id="_bhMl">'+dl+'</datalist></div>'+
+        '<div class="form-row">'+
+        '<div class="form-group"><label>Mise ('+sc+')</label><input type="number" class="input" id="_bhB" value="'+(b.bet||'')+'" min="0" step="0.01" inputmode="decimal" '+(closed?'disabled':'')+'></div>'+
+        '<div class="form-group"><label>Spins</label><input type="number" class="input" id="_bhS" value="'+(b.spinsToTrigger||'')+'" min="0" inputmode="numeric" '+(closed?'disabled':'')+'></div>'+
+        '</div>'+
+        '<div class="form-group"><label>Payout ('+sc+', vide = pas encore ouvert)</label><input type="number" class="input" id="_bhP" value="'+(b.payout!=null?b.payout:'')+'" min="0" step="0.01" inputmode="decimal" '+(closed?'disabled':'')+'></div>',
+      footer:closed?'<button class="btn btn-outline" id="_bhCa" style="flex:1">Fermer</button>':
+        '<button class="btn btn-danger" id="_bhDel" style="flex:.5">🗑️</button><button class="btn btn-outline" id="_bhCa" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bhOk" style="flex:1">Enregistrer</button>'});
+    document.getElementById('_bhCa').onclick=()=>M.close();
+    if(!closed){
+      document.getElementById('_bhDel').onclick=async()=>{
+        await M.waitClose();
+        if(await M.confirm({title:'🗑️',message:'Supprimer ce bonus ?',confirmText:'Supprimer',danger:true})){
+          await db.bhBonuses.delete(bid);await this.render();T.ok('Bonus supprimé');
+        }
+      };
+      document.getElementById('_bhOk').onclick=async()=>{
+        const m=document.getElementById('_bhM').value.trim();
+        const bet=parseFloat(document.getElementById('_bhB').value);
+        const sp=parseInt(document.getElementById('_bhS').value)||0;
+        const pStr=document.getElementById('_bhP').value;
+        const p=pStr===''?null:parseFloat(pStr);
+        if(!m||isNaN(bet)||bet<=0){T.warn('Champs invalides');return}
+        await db.bhBonuses.update(bid,{machine:m,bet,spinsToTrigger:sp,cost:bet*sp,payout:p});
+        M.close();await this.render();T.ok('Modifié');
+      };
+    }
+  },
+
+  async fClose(sess,st){
+    const c=await S.get('currency')||'EUR';const sc=sy(c);
+    const remain=st.remainingCount;
+    let warn='';
+    if(remain>0)warn='<div style="padding:10px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);border-radius:var(--radius);margin-bottom:var(--space-md);font-size:13px"><strong>⚠️ '+remain+' bonus pas encore ouvert(s).</strong> Si tu clôtures, ils seront comptés comme non joués (cashout = '+fA(st.totalPayout,c)+').</div>';
+    M.open({title:'🏁 Clôturer la hunt',
+      body:warn+
+        '<div class="form-group"><label>Cashout final ('+sc+')</label><input type="number" class="input" id="_bhCO" value="'+st.totalPayout.toFixed(2)+'" min="0" step="0.01" inputmode="decimal" autofocus></div>'+
+        '<div class="text-muted text-sm">Pré-rempli avec le total des payouts. Modifie si différent (arrondi casino, etc.)</div>',
+      footer:'<button class="btn btn-outline" id="_bhCa" style="flex:1">Annuler</button><button class="btn btn-primary" id="_bhOk" style="flex:1">Clôturer</button>'});
+    document.getElementById('_bhCa').onclick=()=>M.close();
+    document.getElementById('_bhOk').onclick=async()=>{
+      const co=parseFloat(document.getElementById('_bhCO').value);
+      if(isNaN(co)||co<0){T.warn('Cashout invalide');return}
+      await db.bhSessions.update(sess.id,{status:'closed',cashout:co,closedAt:new Date().toISOString()});
+      M.close();await this.render();await App.uBR();T.ok('🏁 Hunt clôturée');
+    };
+  },
+
+  async fDelete(sid){
+    await M.waitClose();
+    if(await M.confirm({title:'🗑️',message:'Supprimer cette hunt et tous ses bonus ?',confirmText:'Supprimer',danger:true})){
+      await db.bhBonuses.where('sessionId').equals(sid).delete();
+      await db.bhSessions.delete(sid);
+      this.st.viewSession=null;
+      await this.render();await App.uBR();T.ok('Hunt supprimée');
+    }
+  }
+};
+/* ═══ DASHBOARD MODULE ═══ */
+const DSH={
+  range:'all', /* 'week' | 'month' | 'year' | 'all' */
+  tab:'global', /* 'global' | 'slots' | 'bj' */
+
+  async init(){await this.render()},
+
+  /* Filter sessions/hands by selected range */
+  _filterByRange(items,dateField){
+    if(this.range==='all')return items;
+    const now=new Date();
+    let cutoff=new Date(0);
+    if(this.range==='week'){cutoff=new Date(now);cutoff.setDate(cutoff.getDate()-7)}
+    else if(this.range==='month'){cutoff=new Date(now);cutoff.setMonth(cutoff.getMonth()-1)}
+    else if(this.range==='year'){cutoff=new Date(now);cutoff.setFullYear(cutoff.getFullYear()-1)}
+    const cutoffStr=cutoff.toISOString().split('T')[0];
+    return items.filter(it=>{
+      if(dateField==='ts'){return (it.ts||0)>=cutoff.getTime()}
+      return (it[dateField]||'')>=cutoffStr;
+    });
+  },
+
+  async _gatherData(){
+    const allSlotSess=await db.slotSessions.toArray();
+    const allSlotPlays=await db.slotPlays.toArray();
+    const allBjSess=await db.bjSessions.toArray();
+    const allBjHands=await db.bjHands.toArray();
+    const allBhSess=await db.bhSessions.toArray();
+    const allBhBonuses=await db.bhBonuses.toArray();
+
+    const slotSess=this._filterByRange(allSlotSess.filter(s=>s.cashout!=null),'date');
+    const slotSessIds=new Set(slotSess.map(s=>s.id));
+    const slotPlays=allSlotPlays.filter(p=>slotSessIds.has(p.sessionId));
+
+    const bjSess=this._filterByRange(allBjSess.filter(s=>s.cashout!=null),'date');
+    const bjSessIds=new Set(bjSess.map(s=>s.id));
+    const bjHands=allBjHands.filter(h=>bjSessIds.has(h.sessionId));
+
+    const bhSess=this._filterByRange(allBhSess.filter(s=>s.cashout!=null),'date');
+    const bhSessIds=new Set(bhSess.map(s=>s.id));
+    const bhSessByIdAll={};allBhSess.forEach(s=>{bhSessByIdAll[s.id]=s});
+    /* For machine stats / ranking we want bonuses from sessions in range (closed only) */
+    const bhBonuses=allBhBonuses.filter(b=>bhSessIds.has(b.sessionId));
+    /* But also for stat purposes we may want all opened bonuses regardless of session status */
+    const bhBonusesAllOpened=allBhBonuses.filter(b=>{
+      const s=bhSessByIdAll[b.sessionId];if(!s)return false;
+      if(this.range==='all')return true;
+      return (s.date||'').slice(0,10)>=this._cutoffStr();
+    });
+
+    return{slotSess,slotPlays,bjSess,bjHands,bhSess,bhBonuses,bhBonusesAllOpened,bhSessByIdAll,allSlotSess,allBjSess,allBhSess};
+  },
+
+  _cutoffStr(){
+    if(this.range==='all')return'';
+    const now=new Date();let cutoff=new Date(now);
+    if(this.range==='week')cutoff.setDate(cutoff.getDate()-7);
+    else if(this.range==='month')cutoff.setMonth(cutoff.getMonth()-1);
+    else if(this.range==='year')cutoff.setFullYear(cutoff.getFullYear()-1);
+    return cutoff.toISOString().split('T')[0];
+  },
+
+  _slotStats(sess,plays){
+    const deposits=sess.reduce((s,x)=>s+(x.deposit||0),0);
+    const cashouts=sess.reduce((s,x)=>s+(x.cashout||0),0);
+    const wagered=plays.reduce((s,p)=>s+playWager(p),0);
+    const totalSpins=plays.reduce((s,p)=>s+playSpins(p),0);
+    const totalBonuses=plays.reduce((s,p)=>s+(p.bonuses||[]).length,0);
+    const allMultis=[];plays.forEach(p=>(p.bonuses||[]).forEach(b=>{if(b.multiplier)allMultis.push(b.multiplier)}));
+    const profit=cashouts-deposits;
+    return{
+      sessions:sess.length,
+      deposits,cashouts,wagered,profit,
+      rtp:wagered>0?((wagered+profit)/wagered*100):0,
+      roi:deposits>0?(profit/deposits*100):0,
+      avgSession:sess.length?profit/sess.length:0,
+      bestSession:sess.length?Math.max(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0,
+      worstSession:sess.length?Math.min(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0,
+      totalSpins,totalBonuses,
+      bonusFreq:totalSpins>0?(totalBonuses/totalSpins*100):0,
+      avgMulti:allMultis.length?allMultis.reduce((a,b)=>a+b,0)/allMultis.length:0,
+      maxMulti:allMultis.length?Math.max(...allMultis):0
+    };
+  },
+
+  _bjStats(sess,hands){
+    const deposits=sess.reduce((s,x)=>s+(x.deposit||0),0);
+    const cashouts=sess.reduce((s,x)=>s+(x.cashout||0),0);
+    const wagered=hands.reduce((s,h)=>s+(h.bet||0)+(h.pp?h.pp.bet:0)+(h.tp?h.tp.bet:0),0);
+    const profit=cashouts-deposits;
+    let W=0,L=0,P=0,BJ=0,SR=0,checkable=0,goodMoves=0;
+    hands.forEach(h=>{
+      if(h.result==='W')W++;else if(h.result==='BJ'){BJ++;W++}else if(h.result==='L')L++;else if(h.result==='P')P++;else if(h.result==='SR')SR++;
+      if(h.recommended&&h.action&&h.recommended!=='BLACKJACK'&&h.recommended!=='BUST'){checkable++;if(h.recommended===h.action)goodMoves++}
+    });
+    const dec=W+L+SR;
+    return{
+      sessions:sess.length,
+      deposits,cashouts,wagered,profit,
+      roi:deposits>0?(profit/deposits*100):0,
+      avgSession:sess.length?profit/sess.length:0,
+      bestSession:sess.length?Math.max(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0,
+      worstSession:sess.length?Math.min(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0,
+      totalHands:hands.length,
+      W,L,P,BJ,SR,
+      winrate:dec>0?(W/dec*100):0,
+      bjRate:hands.length>0?(BJ/hands.length*100):0,
+      pushRate:hands.length>0?(P/hands.length*100):0,
+      adherence:checkable>0?(goodMoves/checkable*100):null,
+      adherenceCount:goodMoves+'/'+checkable,
+      avgBet:hands.length>0?hands.reduce((s,h)=>s+(h.bet||0),0)/hands.length:0
+    };
+  },
+
+  /* Hunt aggregate stats */
+  _huntStats(sess,bonuses){
+    const deposits=sess.reduce((s,x)=>s+(x.deposit||0),0);
+    const cashouts=sess.reduce((s,x)=>s+(x.cashout||0),0);
+    const profit=cashouts-deposits;
+    const opened=bonuses.filter(b=>b.payout!=null);
+    const totalCost=bonuses.reduce((s,b)=>s+(b.cost||0),0);
+    const totalPayout=opened.reduce((s,b)=>s+(b.payout||0),0);
+    const multis=opened.filter(b=>b.cost>0).map(b=>b.payout/b.cost);
+    return{
+      sessions:sess.length,
+      deposits,cashouts,profit,
+      roi:deposits>0?(profit/deposits*100):0,
+      totalBonuses:bonuses.length,openedBonuses:opened.length,
+      totalCost,totalPayout,
+      huntRTP:totalCost>0?(totalPayout/totalCost*100):0,
+      avgMulti:multis.length?multis.reduce((a,b)=>a+b,0)/multis.length:0,
+      maxMulti:multis.length?Math.max(...multis):0,
+      bestSession:sess.length?Math.max(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0,
+      worstSession:sess.length?Math.min(...sess.map(s=>(s.cashout||0)-(s.deposit||0))):0
+    };
+  },
+
+  /* Build daily P/L series for sparkline. Returns [{date, pl}] sorted. */
+  _dailySeries(slotSess,bjSess,bhSess){
+    const byDate={};
+    const add=arr=>arr.forEach(s=>{if(s.cashout==null)return;const k=(s.date||'').slice(0,10);byDate[k]=(byDate[k]||0)+((s.cashout||0)-(s.deposit||0))});
+    add(slotSess);add(bjSess);add(bhSess||[]);
+    return Object.keys(byDate).sort().map(d=>({date:d,pl:byDate[d]}));
+  },
+
+  /* SVG cumulative P/L sparkline */
+  _renderCumChart(daily){
+    if(daily.length<2)return'';
+    const cum=[];let acc=0;daily.forEach(d=>{acc+=d.pl;cum.push(acc)});
+    const W=320,H=100,PR=8;
+    const min=Math.min(0,...cum),max=Math.max(0,...cum),range=max-min||1;
+    const x=i=>PR+(W-2*PR)*(i/(cum.length-1||1));
+    const y=v=>PR+(H-2*PR)*(1-(v-min)/range);
+    const zeroY=y(0);
+    const path=cum.map((v,i)=>(i===0?'M':'L')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+    const last=cum[cum.length-1];
+    const col=last>=0?'var(--accent)':'var(--red)';
+    const area=path+' L '+x(cum.length-1).toFixed(1)+' '+zeroY.toFixed(1)+' L '+x(0).toFixed(1)+' '+zeroY.toFixed(1)+' Z';
+    return'<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="width:100%;height:100px;display:block"><line x1="'+PR+'" y1="'+zeroY.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zeroY.toFixed(1)+'" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3"/><path d="'+area+'" fill="'+col+'" fill-opacity=".15"/><path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  },
+
+  _renderHeatmap(daily){
+    const N=12;
+    const today=new Date();today.setHours(0,0,0,0);
+    const dow=(today.getDay()+6)%7;
+    const monday=new Date(today);monday.setDate(today.getDate()-dow);
+    const start=new Date(monday);start.setDate(monday.getDate()-(N-1)*7);
+    const byDate={};daily.forEach(d=>byDate[d.date]=d.pl);
+    const cells=[];
+    for(let w=0;w<N;w++)for(let d=0;d<7;d++){
+      const dt=new Date(start);dt.setDate(start.getDate()+w*7+d);
+      const iso=dt.toISOString().split('T')[0];
+      const pl=byDate[iso];
+      const future=dt>today;
+      let bg='var(--bg-input)';
+      if(!future&&pl!=null){
+        if(pl>0){const i=Math.min(1,pl/200);bg='color-mix(in srgb,var(--accent) '+(20+i*60).toFixed(0)+'%,transparent)'}
+        else if(pl<0){const i=Math.min(1,-pl/200);bg='color-mix(in srgb,var(--red) '+(20+i*60).toFixed(0)+'%,transparent)'}
+      } else if(future){bg='transparent'}
+      cells.push({iso,pl,bg});
+    }
+    let html='<div class="dsh-heatmap">';
+    cells.forEach(c=>{
+      const tip=c.iso+(c.pl!=null?' · '+(c.pl>=0?'+':'')+c.pl.toFixed(0):'');
+      html+='<div class="dsh-heat-cell" style="background:'+c.bg+'" title="'+tip+'"></div>';
+    });
+    html+='</div>';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:10px;color:var(--text-muted)"><span>'+N+' dernières semaines</span><div style="display:flex;align-items:center;gap:4px">Perte<div style="width:12px;height:12px;background:color-mix(in srgb,var(--red) 70%,transparent);border-radius:2px"></div><div style="width:12px;height:12px;background:var(--bg-input);border-radius:2px"></div><div style="width:12px;height:12px;background:color-mix(in srgb,var(--accent) 70%,transparent);border-radius:2px"></div>Gain</div></div>';
+    return html;
+  },
+
+  /* === MAIN RENDER === */
+  async render(){
+    const el=document.getElementById('viewDashboard'),c=await S.get('currency')||'EUR';
+    const data=await this._gatherData();
+    const{slotSess,slotPlays,bjSess,bjHands,bhSess,bhBonuses,bhBonusesAllOpened,bhSessByIdAll}=data;
+    const slot=this._slotStats(slotSess,slotPlays);
+    const bj=this._bjStats(bjSess,bjHands);
+    const hunt=this._huntStats(bhSess,bhBonuses);
+
+    let html='<div class="view-inner"><h2 class="view-title">Statistiques</h2>';
+
+    /* Range selector */
+    html+='<div class="settings-card" style="padding:6px;display:flex;gap:4px;margin-bottom:var(--space-sm)">'+
+      [['week','7j'],['month','30j'],['year','12m'],['all','Tout']].map(([k,l])=>'<button class="btn '+(this.range===k?'btn-primary':'btn-outline')+'" data-range="'+k+'" style="flex:1;padding:8px 0;font-size:13px;font-weight:700">'+l+'</button>').join('')+
+      '</div>';
+
+    /* Sub-tabs */
+    html+='<div class="settings-card" style="padding:6px;display:flex;gap:4px">'+
+      [['global','💼 Global'],['slots','🎰 Slots'],['bj','🃏 BJ']].map(([k,l])=>'<button class="btn '+(this.tab===k?'btn-primary':'btn-outline')+'" data-tab="'+k+'" style="flex:1;padding:8px 0;font-size:13px;font-weight:700">'+l+'</button>').join('')+
+      '</div>';
+
+    const totalSessions=slot.sessions+bj.sessions+hunt.sessions;
+    if(totalSessions===0){
+      html+='<div class="settings-card" style="text-align:center;padding:var(--space-xl)"><p class="text-muted">Aucune donnée sur cette période.</p></div></div>';
+      el.innerHTML=html;this._bind();return;
+    }
+
+    /* Dispatch to tab renderer */
+    if(this.tab==='global')html+=this._renderGlobal(data,slot,bj,hunt,c);
+    else if(this.tab==='slots')html+=this._renderSlots(data,slot,hunt,c);
+    else if(this.tab==='bj')html+=this._renderBJ(data,bj,c);
+
+    html+='</div>';
+    el.innerHTML=html;
+    this._bind();
+  },
+
+  /* === GLOBAL TAB === */
+  _renderGlobal(data,slot,bj,hunt,c){
+    const{slotSess,bjSess,bhSess}=data;
+    const totalDep=slot.deposits+bj.deposits+hunt.deposits;
+    const totalCash=slot.cashouts+bj.cashouts+hunt.cashouts;
+    const totalProfit=totalCash-totalDep;
+    const totalWager=slot.wagered+bj.wagered+(hunt.totalCost||0);
+    const globalRTP=totalWager>0?((totalWager+totalProfit)/totalWager*100):0;
+    const globalROI=totalDep>0?(totalProfit/totalDep*100):0;
+    const totalSessions=slot.sessions+bj.sessions+hunt.sessions;
+    const daily=this._dailySeries(slotSess,bjSess,bhSess);
+    const winDays=daily.filter(d=>d.pl>0).length;
+    const loseDays=daily.filter(d=>d.pl<0).length;
+    const dayWinRate=daily.length>0?(winDays/daily.length*100):0;
+
+    let html='<div class="settings-card"><h3 class="card-title">💼 Vue globale</h3>';
+    html+='<div class="stat-grid">';
+    html+='<div class="stat-box"><div class="stat-value '+(totalProfit>=0?'positive':'negative')+'">'+fC(totalProfit,c)+'</div><div class="stat-label">P/L net</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+fA(totalDep,c)+'</div><div class="stat-label">Dépôts</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+fA(totalCash,c)+'</div><div class="stat-label">Cashouts</div></div>';
+    html+='<div class="stat-box"><div class="stat-value '+(globalROI>=0?'positive':'negative')+'">'+(globalROI>=0?'+':'')+globalROI.toFixed(1)+'%</div><div class="stat-label">ROI</div></div>';
+    html+='</div>';
+    let rows='';
+    if(totalWager>0)rows+='<div class="rtp-row"><div class="rtp-machine">Total misé</div><div class="rtp-values"><span class="stat-value-sm">'+fA(totalWager,c)+'</span><span class="text-muted text-sm">×'+(totalDep>0?(totalWager/totalDep).toFixed(1):'—')+' du dépôt</span></div></div>';
+    if(totalWager>0)rows+='<div class="rtp-row"><div class="rtp-machine">RTP global</div><div class="rtp-values"><span class="stat-value-sm '+SS.rtpClass(globalRTP)+'">'+globalRTP.toFixed(2)+'%</span></div></div>';
+    rows+='<div class="rtp-row"><div class="rtp-machine">Sessions</div><div class="rtp-values"><span class="stat-value-sm">'+totalSessions+'</span><span class="text-muted text-sm">'+slot.sessions+'🎰 · '+hunt.sessions+'🎯 · '+bj.sessions+'🃏</span></div></div>';
+    if(daily.length>0)rows+='<div class="rtp-row"><div class="rtp-machine">Jours gagnants</div><div class="rtp-values"><span class="stat-value-sm '+(dayWinRate>=50?'positive':'negative')+'">'+dayWinRate.toFixed(0)+'%</span><span class="text-muted text-sm">'+winDays+'W · '+loseDays+'L</span></div></div>';
+    html+=rows+'</div>';
+
+    /* Cumulative chart */
+    if(daily.length>=2){
+      html+='<div class="settings-card"><h3 class="card-title">📈 P/L cumulé</h3>'+this._renderCumChart(daily)+'</div>';
+    }
+
+    /* Heatmap */
+    if(daily.length>0){
+      html+='<div class="settings-card"><h3 class="card-title">🗓️ Activité</h3>'+this._renderHeatmap(daily)+'</div>';
+    }
+
+    /* Split bar slot/hunt/bj */
+    const segs=[];
+    if(slot.sessions>0)segs.push({lab:'🎰',profit:slot.profit});
+    if(hunt.sessions>0)segs.push({lab:'🎯',profit:hunt.profit});
+    if(bj.sessions>0)segs.push({lab:'🃏',profit:bj.profit});
+    if(segs.length>=2){
+      const total=segs.reduce((s,x)=>s+Math.abs(x.profit),0)||1;
+      html+='<div class="settings-card"><h3 class="card-title">⚖️ Répartition P/L</h3>';
+      html+='<div style="display:flex;height:24px;border-radius:6px;overflow:hidden;background:var(--bg-input);margin-bottom:8px">';
+      segs.forEach((s,i)=>{
+        const pct=Math.abs(s.profit)/total*100;
+        const col=s.profit>=0?'var(--accent)':'var(--red)';
+        html+='<div style="width:'+pct.toFixed(1)+'%;background:'+col+';opacity:'+(0.6+0.4*((segs.length-i)/segs.length)).toFixed(2)+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">'+s.lab+' '+pct.toFixed(0)+'%</div>';
+      });
+      html+='</div>';
+      html+='<div style="display:flex;justify-content:space-between;font-size:12px;flex-wrap:wrap;gap:8px">';
+      segs.forEach(s=>{html+='<span>'+s.lab+' '+fC(s.profit,c)+'</span>'});
+      html+='</div></div>';
+    }
+    return html;
+  },
+
+  /* === SLOTS TAB === */
+  _renderSlots(data,slot,hunt,c){
+    const{slotPlays,bhBonusesAllOpened,bhSess,bhSessByIdAll}=data;
+    let html='';
+    if(slot.sessions===0&&hunt.sessions===0){
+      return'<div class="settings-card" style="text-align:center;padding:var(--space-xl)"><p class="text-muted">Aucune donnée slots / hunt sur cette période.</p></div>';
+    }
+
+    /* Slot core stats */
+    if(slot.sessions>0){
+      html+='<div class="settings-card"><h3 class="card-title">🎰 Slots</h3>';
+      html+='<div class="stat-grid">';
+      html+='<div class="stat-box"><div class="stat-value '+(slot.profit>=0?'positive':'negative')+'">'+fC(slot.profit,c)+'</div><div class="stat-label">Net</div></div>';
+      html+='<div class="stat-box"><div class="stat-value">'+slot.sessions+'</div><div class="stat-label">Sessions</div></div>';
+      if(slot.wagered>0)html+='<div class="stat-box"><div class="stat-value '+SS.rtpClass(slot.rtp)+'">'+slot.rtp.toFixed(1)+'%</div><div class="stat-label">RTP</div></div>';
+      html+='<div class="stat-box"><div class="stat-value '+(slot.avgSession>=0?'positive':'negative')+'">'+fC(slot.avgSession,c)+'</div><div class="stat-label">Moy./session</div></div>';
+      html+='</div>';
+      let r='';
+      r+='<div class="rtp-row"><div class="rtp-machine">Best / Worst session</div><div class="rtp-values"><span class="stat-value-sm positive">'+fC(slot.bestSession,c)+'</span><span class="stat-value-sm negative">'+fC(slot.worstSession,c)+'</span></div></div>';
+      if(slot.totalSpins>0)r+='<div class="rtp-row"><div class="rtp-machine">Spins / Bonus</div><div class="rtp-values"><span class="stat-value-sm">'+slot.totalSpins.toLocaleString('fr-FR')+'</span><span class="stat-value-sm">'+slot.totalBonuses+'</span></div></div>';
+      if(slot.bonusFreq>0)r+='<div class="rtp-row"><div class="rtp-machine">Fréquence bonus</div><div class="rtp-values"><span class="stat-value-sm">1 / '+(slot.bonusFreq>0?Math.round(100/slot.bonusFreq):'∞')+' spins</span><span class="text-muted text-sm">'+slot.bonusFreq.toFixed(2)+'%</span></div></div>';
+      if(slot.maxMulti>0)r+='<div class="rtp-row"><div class="rtp-machine">Multi moy / max</div><div class="rtp-values"><span class="stat-value-sm">x'+slot.avgMulti.toFixed(1)+'</span><span class="stat-value-sm positive">x'+slot.maxMulti.toFixed(0)+'</span></div></div>';
+      html+=r+'</div>';
+    }
+
+    /* Hunt summary */
+    if(hunt.sessions>0){
+      html+='<div class="settings-card"><h3 class="card-title">🎯 Bonus Hunt</h3>';
+      html+='<div class="stat-grid">';
+      html+='<div class="stat-box"><div class="stat-value '+(hunt.profit>=0?'positive':'negative')+'">'+fC(hunt.profit,c)+'</div><div class="stat-label">Net</div></div>';
+      html+='<div class="stat-box"><div class="stat-value">'+hunt.sessions+'</div><div class="stat-label">Hunts</div></div>';
+      html+='<div class="stat-box"><div class="stat-value">'+hunt.openedBonuses+'</div><div class="stat-label">Bonus ouverts</div></div>';
+      if(hunt.totalCost>0)html+='<div class="stat-box"><div class="stat-value '+SS.rtpClass(hunt.huntRTP)+'">'+hunt.huntRTP.toFixed(1)+'%</div><div class="stat-label">RTP hunts</div></div>';
+      html+='</div>';
+      let r='';
+      r+='<div class="rtp-row"><div class="rtp-machine">Best / Worst hunt</div><div class="rtp-values"><span class="stat-value-sm positive">'+fC(hunt.bestSession,c)+'</span><span class="stat-value-sm negative">'+fC(hunt.worstSession,c)+'</span></div></div>';
+      if(hunt.maxMulti>0)r+='<div class="rtp-row"><div class="rtp-machine">Multi moy / max</div><div class="rtp-values"><span class="stat-value-sm">'+hunt.avgMulti.toFixed(2)+'×</span><span class="stat-value-sm positive">'+hunt.maxMulti.toFixed(1)+'×</span></div></div>';
+      html+=r+'</div>';
+    }
+
+    /* Top bonus ranking */
+    const ranking=SS.bonusRanking(bhBonusesAllOpened,bhSessByIdAll);
+    if(ranking.length>0){
+      const top=ranking.slice(0,5);
+      const flop=ranking.length>5?ranking.slice(-3).reverse():[];
+      html+='<div class="settings-card"><h3 class="card-title">🏆 Top bonus</h3>';
+      html+=top.map((b,i)=>{
+        const medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'';
+        return'<div class="rtp-row"><div class="rtp-machine">'+medal+esc(trn(b.machine||'?',16))+'<span class="text-muted text-sm"> · '+b.mult.toFixed(1)+'×</span></div><div class="rtp-values"><span class="text-muted text-sm">'+fA(b.cost||0,c)+' → '+fA(b.payout,c)+'</span><span class="stat-value-sm positive">'+fC(b.pnl,c)+'</span></div></div>';
+      }).join('');
+      if(flop.length){
+        html+='<div class="separator"></div><h3 class="card-title" style="font-size:12px;text-transform:uppercase;color:var(--text-muted)">💩 Flop</h3>';
+        html+=flop.map(b=>'<div class="rtp-row"><div class="rtp-machine">'+esc(trn(b.machine||'?',16))+'<span class="text-muted text-sm"> · '+b.mult.toFixed(1)+'×</span></div><div class="rtp-values"><span class="text-muted text-sm">'+fA(b.cost||0,c)+' → '+fA(b.payout,c)+'</span><span class="stat-value-sm negative">'+fC(b.pnl,c)+'</span></div></div>').join('');
+      }
+      html+='</div>';
+    }
+
+    /* Top machines (slots + hunt merged) */
+    const byMach=SS.byMachWithHunt(slotPlays,bhBonusesAllOpened);
+    if(byMach.length){
+      byMach.sort((a,b)=>b.profit-a.profit);
+      const top=byMach.slice(0,5),bot=byMach.length>5?byMach.slice(-3).reverse():[];
+      html+='<div class="settings-card"><h3 class="card-title">🎰 Top machines</h3>';
+      html+=top.map((m,i)=>{
+        const medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'';
+        const huntBadge=m.huntCount>0?'<span class="text-muted text-sm"> · '+m.huntCount+'🎯</span>':'';
+        const rtpStr=m.totalBet>0?'<span class="stat-value-sm '+SS.rtpClass(m.rtp)+'">'+m.rtp.toFixed(0)+'%</span>':'';
+        return'<div class="rtp-row"><div class="rtp-machine">'+medal+esc(trn(m.name,18))+'<span class="text-muted text-sm"> · '+m.bonuses+' bonus</span>'+huntBadge+'</div><div class="rtp-values">'+rtpStr+'<span class="stat-value-sm '+(m.profit>=0?'positive':'negative')+'">'+fC(m.profit,c)+'</span></div></div>';
+      }).join('');
+      if(bot.length){
+        html+='<div class="separator"></div><h3 class="card-title" style="font-size:12px;text-transform:uppercase;color:var(--text-muted)">❄️ À éviter</h3>';
+        html+=bot.map(m=>{
+          const rtpStr=m.totalBet>0?'<span class="stat-value-sm '+SS.rtpClass(m.rtp)+'">'+m.rtp.toFixed(0)+'%</span>':'';
+          const huntBadge=m.huntCount>0?'<span class="text-muted text-sm"> · '+m.huntCount+'🎯</span>':'';
+          return'<div class="rtp-row"><div class="rtp-machine">'+esc(trn(m.name,18))+'<span class="text-muted text-sm"> · '+m.bonuses+' bonus</span>'+huntBadge+'</div><div class="rtp-values">'+rtpStr+'<span class="stat-value-sm negative">'+fC(m.profit,c)+'</span></div></div>';
+        }).join('');
+      }
+      html+='</div>';
+    }
+
+    /* By provider */
+    const byProv={};slotPlays.forEach(p=>{const pv=p.provider||'—';if(!byProv[pv])byProv[pv]={profit:0,plays:0,bet:0};byProv[pv].profit+=(p.balanceOut-p.balanceIn);byProv[pv].plays++;byProv[pv].bet+=playWager(p)});
+    const provArr=Object.entries(byProv).filter(([n])=>n!=='—').map(([name,v])=>({name,...v,rtp:v.bet>0?((v.bet+v.profit)/v.bet*100):0}));
+    if(provArr.length>=2){
+      provArr.sort((a,b)=>b.profit-a.profit);
+      html+='<div class="settings-card"><h3 class="card-title">🏢 Par fournisseur</h3>';
+      html+=provArr.map(p=>'<div class="rtp-row"><div class="rtp-machine">'+esc(p.name)+'<span class="text-muted text-sm"> · '+p.plays+' play'+(p.plays>1?'s':'')+'</span></div><div class="rtp-values">'+(p.bet>0?'<span class="stat-value-sm '+SS.rtpClass(p.rtp)+'">'+p.rtp.toFixed(0)+'%</span>':'')+'<span class="stat-value-sm '+(p.profit>=0?'positive':'negative')+'">'+fC(p.profit,c)+'</span></div></div>').join('');
+      html+='</div>';
+    }
+
+    return html;
+  },
+
+  /* === BJ TAB === */
+  _renderBJ(data,bj,c){
+    if(bj.sessions===0){
+      return'<div class="settings-card" style="text-align:center;padding:var(--space-xl)"><p class="text-muted">Aucune session BJ sur cette période.</p></div>';
+    }
+    let html='<div class="settings-card"><h3 class="card-title">🃏 Blackjack</h3>';
+    html+='<div class="stat-grid">';
+    html+='<div class="stat-box"><div class="stat-value '+(bj.profit>=0?'positive':'negative')+'">'+fC(bj.profit,c)+'</div><div class="stat-label">Net</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+bj.sessions+'</div><div class="stat-label">Sessions</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+bj.totalHands+'</div><div class="stat-label">Mains</div></div>';
+    html+='<div class="stat-box"><div class="stat-value">'+bj.winrate.toFixed(0)+'%</div><div class="stat-label">Winrate</div></div>';
+    html+='</div>';
+    let r='';
+    r+='<div class="rtp-row"><div class="rtp-machine">Best / Worst session</div><div class="rtp-values"><span class="stat-value-sm positive">'+fC(bj.bestSession,c)+'</span><span class="stat-value-sm negative">'+fC(bj.worstSession,c)+'</span></div></div>';
+    if(bj.adherence!=null)r+='<div class="rtp-row"><div class="rtp-machine">📚 Basic strategy</div><div class="rtp-values"><span class="stat-value-sm '+(bj.adherence>=90?'positive':bj.adherence>=75?'':'negative')+'">'+bj.adherence.toFixed(0)+'%</span><span class="text-muted text-sm">'+bj.adherenceCount+'</span></div></div>';
+    if(bj.BJ>0)r+='<div class="rtp-row"><div class="rtp-machine">Blackjacks</div><div class="rtp-values"><span class="stat-value-sm positive">'+bj.BJ+'</span><span class="text-muted text-sm">'+bj.bjRate.toFixed(1)+'%</span></div></div>';
+    r+='<div class="rtp-row"><div class="rtp-machine">W / L / P / SR</div><div class="rtp-values"><span class="stat-value-sm">'+bj.W+' / '+bj.L+' / '+bj.P+' / '+bj.SR+'</span></div></div>';
+    if(bj.avgBet>0)r+='<div class="rtp-row"><div class="rtp-machine">Mise moyenne</div><div class="rtp-values"><span class="stat-value-sm">'+fA(bj.avgBet,c)+'</span></div></div>';
+    if(bj.wagered>0)r+='<div class="rtp-row"><div class="rtp-machine">Total misé</div><div class="rtp-values"><span class="stat-value-sm">'+fA(bj.wagered,c)+'</span></div></div>';
+    html+=r+'</div>';
+    return html;
+  },
+
+  _bind(){
+    document.querySelectorAll('#viewDashboard [data-range]').forEach(b=>b.addEventListener('click',()=>{this.range=b.dataset.range;this.render()}));
+    document.querySelectorAll('#viewDashboard [data-tab]').forEach(b=>b.addEventListener('click',()=>{this.tab=b.dataset.tab;this.render()}));
+  }
+};
+const App={
+  v:'slots',
+  async init(){this.nav();this.modal();this.hash();await this.uBR();await SE.init();await SL.init();await BJ.init();await BH.init();await DSH.init();document.addEventListener('click',e=>{if(e.target.id==='fabS')SL.fSess()})},
+  nav(){document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>this.go(t.dataset.target)))},
+  go(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));const vw=document.querySelector('[data-view="'+v+'"]');if(vw){vw.classList.remove('active');void vw.offsetWidth;vw.classList.add('active')}const tb=document.querySelector('.nav-tab[data-target="'+v+'"]');if(tb)tb.classList.add('active');document.getElementById('appMain').scrollTop=0;this.v=v;location.hash=v;if(v==='slots')SL.render();else if(v==='hunt')BH.render();else if(v==='blackjack')BJ.render();else if(v==='dashboard')DSH.render()},
+  hash(){const h=location.hash.replace('#','')||'slots';this.go(['slots','hunt','blackjack','dashboard','settings'].includes(h)?h:'slots');window.addEventListener('hashchange',()=>{const x=location.hash.replace('#','');if(x&&x!==this.v)this.go(x)})},
+  modal(){document.getElementById('mX').onclick=()=>M.close();document.getElementById('mOv').addEventListener('click',e=>{if(e.target.id==='mOv')M.close()})},
+  async uBR(){const el=document.getElementById('hBR'),cur=await BR.cur(),c=await S.get('currency');if(cur===null){el.textContent='—';el.classList.remove('negative');return}el.textContent=fA(cur,c);el.classList.toggle('negative',cur<(await S.get('bankrollInitial')))}
+};
+document.addEventListener('DOMContentLoaded',()=>App.init());
+/* ═══ SERVICE WORKER REGISTRATION ═══ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      /* Detect a waiting worker (new version available) and prompt activation */
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;if(!nw)return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed'&&navigator.serviceWorker.controller){
+            /* New version ready — activate it on next load.
+               To force reload now, uncomment: nw.postMessage('SKIP_WAITING'); window.location.reload(); */
+            console.log('[SW] New version installed, will activate on next visit.');
+          }
+        });
+      });
+    }).catch(err=>console.warn('[SW] register failed:',err));
+  });
+}
+</script>
+</body>
+</html>
