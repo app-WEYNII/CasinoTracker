@@ -8,7 +8,7 @@
  *  - Bump CACHE_VERSION on every release so old assets are evicted.
  * ═══════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME    = `casino-tracker-${CACHE_VERSION}`;
 
 /* Pre-cache the full app shell on install. Paths are relative so the SW
@@ -17,17 +17,17 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './icons/favicon-16.png',
-  './icons/favicon-32.png',
-  './icons/favicon.ico',
-  './icons/apple-touch-icon-120.png',
-  './icons/apple-touch-icon-152.png',
-  './icons/apple-touch-icon-167.png',
-  './icons/apple-touch-icon-180.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-192-maskable.png',
-  './icons/icon-512-maskable.png',
+  './favicon-16.png',
+  './favicon-32.png',
+  './favicon.ico',
+  './apple-touch-icon-120.png',
+  './apple-touch-icon-152.png',
+  './apple-touch-icon-167.png',
+  './apple-touch-icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-192-maskable.png',
+  './icon-512-maskable.png',
   /* External — Dexie. Versioned & immutable, safe to cache long-term. */
   'https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.7/dexie.min.js',
 ];
