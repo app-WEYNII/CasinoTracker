@@ -8,7 +8,7 @@
  *  - Bump CACHE_VERSION on every release so old assets are evicted.
  * ═══════════════════════════════════════════════════════════════════ */
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME    = `casino-tracker-${CACHE_VERSION}`;
 
 /* Pre-cache the full app shell on install. Paths are relative so the SW
